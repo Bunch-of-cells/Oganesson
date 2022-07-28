@@ -46,6 +46,19 @@ impl Scalar {
     pub fn unit(&self) -> Unit {
         self.1
     }
+
+    /// **This does not raise the units to the given power, use it at your own risk**
+    pub fn powf(self, n: f64) -> Scalar {
+        Scalar(self.0.powf(n), self.1)
+    }
+
+    pub fn powi(self, n: i32) -> Scalar {
+        Scalar(self.0.powi(n), self.1.pow(n))
+    }
+
+    pub fn try_radical(self, n: i32) -> Option<Scalar> {
+        Some(Scalar(self.0.powf(1.0 / n as f64), self.1.try_radical(n)?))
+    }
 }
 
 impl Default for Scalar {
@@ -68,10 +81,11 @@ impl From<f64> for Scalar {
 
 impl Add for Scalar {
     type Output = Scalar;
+    #[track_caller]
     fn add(self, other: Scalar) -> Scalar {
         if self.1 != other.1 {
             panic!(
-                "Cannot add vectors with different units: {} and {}",
+                "Cannot add scalars with different units: {} and {}",
                 self.1, other.1
             );
         }
@@ -80,17 +94,39 @@ impl Add for Scalar {
 }
 
 impl AddAssign for Scalar {
+    #[track_caller]
     fn add_assign(&mut self, other: Scalar) {
         *self = *self + other;
     }
 }
 
+impl Add<f64> for Scalar {
+    type Output = Scalar;
+    fn add(self, other: f64) -> Scalar {
+        Scalar(self.0 + other, self.1)
+    }
+}
+
+impl AddAssign<f64> for Scalar {
+    fn add_assign(&mut self, other: f64) {
+        *self = *self + other;
+    }
+}
+
+impl Add<Scalar> for f64 {
+    type Output = Scalar;
+    fn add(self, other: Scalar) -> Scalar {
+        other + self
+    }
+}
+
 impl Sub for Scalar {
     type Output = Scalar;
+    #[track_caller]
     fn sub(self, other: Scalar) -> Scalar {
         if self.1 != other.1 {
             panic!(
-                "Cannot add vectors with different units: {} and {}",
+                "Cannot add scalars with different units: {} and {}",
                 self.1, other.1
             );
         }
@@ -99,8 +135,29 @@ impl Sub for Scalar {
 }
 
 impl SubAssign for Scalar {
+    #[track_caller]
     fn sub_assign(&mut self, other: Scalar) {
         *self = *self - other;
+    }
+}
+
+impl Sub<f64> for Scalar {
+    type Output = Scalar;
+    fn sub(self, other: f64) -> Scalar {
+        Scalar(self.0 - other, self.1)
+    }
+}
+
+impl SubAssign<f64> for Scalar {
+    fn sub_assign(&mut self, other: f64) {
+        *self = *self - other;
+    }
+}
+
+impl Sub<Scalar> for f64 {
+    type Output = Scalar;
+    fn sub(self, other: Scalar) -> Scalar {
+        Scalar(self - other.0, other.1)
     }
 }
 

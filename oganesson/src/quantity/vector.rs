@@ -5,15 +5,15 @@ use std::{
 
 use crate::{
     unit::{Unit, UnitError},
-    units::Null,
+    units::{Null},
     Scalar,
 };
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Vector<const T: usize>(pub [f64; T], pub Unit);
 impl<const T: usize> Vector<T> {
-    pub fn magnitude(&self) -> f64 {
-        self.0.iter().fold(0.0, |acc, &x| acc + x.powi(2)).sqrt()
+    pub fn magnitude(&self) -> Scalar {
+        Scalar(self.0.iter().fold(0.0, |acc, &x| acc + x.powi(2)).sqrt(), self.1)
     }
 
     pub fn normalized(&self) -> Vector<T> {
@@ -25,11 +25,11 @@ impl<const T: usize> Vector<T> {
         Vector([0.0; T], Null)
     }
 
-    pub fn dot(&self, other: &Vector<T>) -> f64 {
+    pub fn dot(&self, other: &Vector<T>) -> Scalar {
         self.0
             .iter()
             .zip(other.0.iter())
-            .fold(0.0, |acc, (&x, &y)| acc + x + y)
+            .fold(Scalar(0.0, self.1 * other.1), |acc, (&x, &y)| acc + x + y)
     }
 
     pub fn checked_add(self, other: Vector<T>) -> Option<Vector<T>> {
@@ -58,6 +58,10 @@ impl<const T: usize> Vector<T> {
 
     pub fn unit(&self) -> Unit {
         self.1
+    }
+
+    pub fn squared(self) -> Scalar {
+        self.dot(&self)
     }
 }
 

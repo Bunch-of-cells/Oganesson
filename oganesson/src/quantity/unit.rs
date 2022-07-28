@@ -1,4 +1,3 @@
-#![allow(non_upper_case_globals)]
 use std::{
     error::Error,
     fmt::{Debug, Display, Write},
@@ -140,6 +139,30 @@ impl Unit {
         }
     }
 
+    pub fn try_radical(self, exp: i32) -> Option<Unit> {
+        if [
+            self.length,
+            self.mass,
+            self.time,
+            self.temperature,
+            self.current,
+            self.amount_of_substance,
+            self.luminous_intensity,
+        ].iter().any(|unit| (*unit as f32).powf(1.0 / exp as f32) % 1.0 != 0.0) {
+            return None
+        }
+
+        Some(Unit {
+            length: self.length / exp,
+            mass: self.mass / exp,
+            time: self.time / exp,
+            temperature: self.temperature / exp,
+            current: self.current / exp,
+            amount_of_substance: self.amount_of_substance / exp,
+            luminous_intensity: self.luminous_intensity / exp,
+        })
+    }
+
     pub fn dimentional_formula(&self) -> String {
         let mut out = String::new();
 
@@ -194,7 +217,7 @@ impl Default for Unit {
 impl Display for Unit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self == &Self::NONE {
-            return write!(f, "none");
+            return Ok(());
         }
 
         let mut out = String::new();
