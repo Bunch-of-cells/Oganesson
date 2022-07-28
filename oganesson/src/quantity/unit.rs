@@ -148,7 +148,7 @@ impl Unit {
             self.current,
             self.amount_of_substance,
             self.luminous_intensity,
-        ].iter().any(|unit| (*unit as f32).powf(1.0 / exp as f32) % 1.0 != 0.0) {
+        ].iter().any(|&unit| unit % exp != 0) {
             return None
         }
 
