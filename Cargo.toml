@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "physics",
+    "simulation",
+]
+
+resolver = "2"
