@@ -5,15 +5,18 @@ use std::{
 
 use crate::{
     unit::{Unit, UnitError},
-    units::{Null},
-    Scalar,
+    units::Null,
+    Float, Scalar,
 };
 
 #[derive(Clone, Copy, PartialEq)]
-pub struct Vector<const T: usize>(pub [f64; T], pub Unit);
+pub struct Vector<const T: usize>(pub [Float; T], pub Unit);
 impl<const T: usize> Vector<T> {
     pub fn magnitude(&self) -> Scalar {
-        Scalar(self.0.iter().fold(0.0, |acc, &x| acc + x.powi(2)).sqrt(), self.1)
+        Scalar(
+            self.0.iter().fold(0.0, |acc, &x| acc + x.powi(2)).sqrt(),
+            self.1,
+        )
     }
 
     pub fn normalized(&self) -> Vector<T> {
@@ -48,9 +51,9 @@ impl<const T: usize> Vector<T> {
         }
     }
 
-    pub fn is_of_unit(&self, unit: Unit) -> Result<(), UnitError> {
+    pub fn get_uniterror(&self, unit: Unit, var: &str) -> Result<(), UnitError> {
         if self.1 != unit {
-            Err(UnitError::expected_unit(unit, self.1))
+            Err(UnitError::expected_unit_of(unit, self.1, var))
         } else {
             Ok(())
         }
@@ -62,6 +65,10 @@ impl<const T: usize> Vector<T> {
 
     pub fn squared(self) -> Scalar {
         self.dot(&self)
+    }
+
+    pub fn as_slice(&self) -> &[Float] {
+        &self.0
     }
 }
 
@@ -98,14 +105,15 @@ impl<const T: usize> Debug for Vector<T> {
     }
 }
 
-impl<const T: usize> From<[f64; T]> for Vector<T> {
-    fn from(a: [f64; T]) -> Self {
+impl<const T: usize> From<[Float; T]> for Vector<T> {
+    fn from(a: [Float; T]) -> Self {
         Vector(a, Null)
     }
 }
 
 impl<const T: usize> Add for Vector<T> {
     type Output = Vector<T>;
+    #[track_caller]
     fn add(self, other: Vector<T>) -> Vector<T> {
         if self.1 != other.1 {
             panic!(
@@ -125,6 +133,7 @@ impl<const T: usize> Add for Vector<T> {
 }
 
 impl<const T: usize> AddAssign for Vector<T> {
+    #[track_caller]
     fn add_assign(&mut self, other: Vector<T>) {
         *self = *self + other;
     }
@@ -132,6 +141,7 @@ impl<const T: usize> AddAssign for Vector<T> {
 
 impl<const T: usize> Sub for Vector<T> {
     type Output = Vector<T>;
+    #[track_caller]
     fn sub(self, other: Vector<T>) -> Vector<T> {
         if self.1 != other.1 {
             panic!(
@@ -151,14 +161,15 @@ impl<const T: usize> Sub for Vector<T> {
 }
 
 impl<const T: usize> SubAssign for Vector<T> {
+    #[track_caller]
     fn sub_assign(&mut self, other: Vector<T>) {
         *self = *self - other;
     }
 }
 
-impl<const T: usize> Mul<f64> for Vector<T> {
+impl<const T: usize> Mul<Float> for Vector<T> {
     type Output = Vector<T>;
-    fn mul(self, other: f64) -> Vector<T> {
+    fn mul(self, other: Float) -> Vector<T> {
         let mut result = [0.0; T];
         self.0
             .iter()
@@ -169,16 +180,16 @@ impl<const T: usize> Mul<f64> for Vector<T> {
     }
 }
 
-impl<const T: usize> Mul<Vector<T>> for f64 {
+impl<const T: usize> Mul<Vector<T>> for Float {
     type Output = Vector<T>;
     fn mul(self, other: Vector<T>) -> Vector<T> {
         other * self
     }
 }
 
-impl<const T: usize> Div<f64> for Vector<T> {
+impl<const T: usize> Div<Float> for Vector<T> {
     type Output = Vector<T>;
-    fn div(self, other: f64) -> Vector<T> {
+    fn div(self, other: Float) -> Vector<T> {
         let mut result = [0.0; T];
         self.0
             .iter()
@@ -230,7 +241,7 @@ impl<const T: usize> Neg for Vector<T> {
 }
 
 impl<const T: usize> Index<usize> for Vector<T> {
-    type Output = f64;
+    type Output = Float;
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }
@@ -246,5 +257,12 @@ impl<const T: usize> Mul<Unit> for Vector<T> {
     type Output = Vector<T>;
     fn mul(self, rhs: Unit) -> Self::Output {
         Vector(self.0, self.1 * rhs)
+    }
+}
+
+impl<const T: usize> Div<Unit> for Vector<T> {
+    type Output = Vector<T>;
+    fn div(self, rhs: Unit) -> Self::Output {
+        Vector(self.0, self.1 / rhs)
     }
 }

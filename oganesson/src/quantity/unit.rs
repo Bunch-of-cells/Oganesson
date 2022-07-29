@@ -4,6 +4,8 @@ use std::{
     ops::{Div, Mul},
 };
 
+use crate::{Float, Scalar};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Unit {
     pub length: i32,
@@ -148,8 +150,11 @@ impl Unit {
             self.current,
             self.amount_of_substance,
             self.luminous_intensity,
-        ].iter().any(|&unit| unit % exp != 0) {
-            return None
+        ]
+        .iter()
+        .any(|&unit| unit % exp != 0)
+        {
+            return None;
         }
 
         Some(Unit {
@@ -161,6 +166,18 @@ impl Unit {
             amount_of_substance: self.amount_of_substance / exp,
             luminous_intensity: self.luminous_intensity / exp,
         })
+    }
+
+    pub const fn recip(self) -> Unit {
+        Unit {
+            length: -self.length,
+            mass: -self.mass,
+            time: -self.time,
+            temperature: -self.temperature,
+            current: -self.current,
+            amount_of_substance: -self.amount_of_substance,
+            luminous_intensity: -self.luminous_intensity,
+        }
     }
 
     pub fn dimentional_formula(&self) -> String {
@@ -268,8 +285,11 @@ impl UnitError {
         UnitError(message.to_string())
     }
 
-    pub fn expected_unit(expected: Unit, found: Unit) -> UnitError {
-        UnitError(format!("Expected unit {}, found {}", expected, found))
+    pub fn expected_unit_of(expected: Unit, found: Unit, var: &str) -> UnitError {
+        UnitError(format!(
+            "Expected unit {} for {}, found {}",
+            expected, var, found
+        ))
     }
 }
 
@@ -286,3 +306,31 @@ impl Debug for UnitError {
 }
 
 impl Error for UnitError {}
+
+impl Mul<Float> for Unit {
+    type Output = Scalar;
+    fn mul(self, rhs: Float) -> Self::Output {
+        Scalar(rhs, self)
+    }
+}
+
+impl Div<Float> for Unit {
+    type Output = Scalar;
+    fn div(self, rhs: Float) -> Self::Output {
+        Scalar(rhs, self.recip())
+    }
+}
+
+impl Mul<Unit> for Float {
+    type Output = Scalar;
+    fn mul(self, rhs: Unit) -> Self::Output {
+        Scalar(self, rhs)
+    }
+}
+
+impl Div<Unit> for Float {
+    type Output = Scalar;
+    fn div(self, rhs: Unit) -> Self::Output {
+        Scalar(self, rhs.recip())
+    }
+}

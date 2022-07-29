@@ -1,34 +1,82 @@
-use oganesson::{Vector, units::{m, s}, constants};
+use coffee::{
+    graphics::{Color, Frame, Mesh, Point, Shape, Window},
+    load::Task,
+    Error, Game, Timer,
+};
+use oganesson::{units::*, Collider, Object, PhysicsWorld, Scalar, Vector};
 
-fn main() {
-    let v = Vector([500.0], m / s);
-    println!("{:?}", (1.0 - v.squared() / constants::c.powi(2)).powf(2f64.recip()));
+fn main() -> Result<(), Error> {
+    Simulation::run(coffee::graphics::WindowSettings {
+        title: "Oganesson".to_string(),
+        size: (1200, 800),
+        resizable: false,
+        fullscreen: false,
+        maximized: false,
+    })
+}
 
-    let mut solver = Solver {
-        f: |t, x| t.cos() + x,
-        t: 0.0,
-        y: 0.0,
-        h: 1e-5,
-    };
+struct Simulation {
+    world: PhysicsWorld<2>,
+}
 
-    for _ in 0..10 {
-        let actual = solver.y.sin();
-        println!("{:?}", actual - solver.solve_rk4());
+impl Game for Simulation {
+    type Input = ();
+    type LoadingScreen = ();
+
+    fn load(_window: &Window) -> Task<Self>
+    where
+        Self: Sized,
+    {
+        let mut world = PhysicsWorld::new(Vector::zero() * of_acceleration).unwrap();
+        world.add_object(
+            Object::new(
+                Vector([0.0, 400.0], m),
+                Vector([100.0, 0.0], m / s),
+                Scalar(50.0, kg),
+                Collider::Sphere {
+                    radius: Scalar(100.0, m),
+                },
+            )
+            .unwrap(),
+        );
+        world.add_object(
+            Object::new(
+                Vector([1200.0, 400.0], m),
+                Vector([-100.0, 0.0], m / s),
+                Scalar(500.0, kg),
+                Collider::Sphere {
+                    radius: Scalar(100.0, m),
+                },
+            )
+            .unwrap(),
+        );
+        Task::succeed(|| Simulation { world })
     }
-}
 
-struct Solver{
-    f: fn(f32, f32) -> f32, t: f32, y: f32, h: f32,
-}
+    fn draw(&mut self, frame: &mut Frame<'_>, _timer: &Timer) {
+        frame.clear(Color::BLACK);
+        let mut target = frame.as_target();
+        let mut mesh = Mesh::new();
+        for object in self.world.objects() {
+            match object.collider() {
+                Collider::Sphere { radius } => {
+                    mesh.fill(
+                        Shape::Circle {
+                            center: Point::from_slice(object.transform().position().as_slice()),
+                            radius: radius.value(),
+                        },
+                        Color::GREEN,
+                    );
+                }
+                Collider::Plane { .. } => {
+                    todo!()
+                }
+            }
+        }
+        mesh.draw(&mut target);
+    }
 
-impl Solver {
-    fn solve_rk4(&mut self) -> f32 {
-        let k1 = (self.f)(self.t, self.y);
-        let k2 = (self.f)(self.t + self.h / 2.0, self.y + self.h * k1 / 2.0);
-        let k3 = (self.f)(self.t + self.h / 2.0, self.y + self.h * k2 / 2.0);
-        let k4 = (self.f)(self.t + self.h, self.y + self.h * k3);
-        self.y = (k1 + 2.0 * k2 + 3.0 * k3 + k4) * self.h / 6.0;
-        self.t += self.h;
-        self.y
+    fn update(&mut self, _window: &Window) {
+        self.world.step((Self::TICKS_PER_SECOND as f32).recip());
     }
 }

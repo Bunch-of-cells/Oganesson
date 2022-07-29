@@ -6,12 +6,13 @@ use std::{
 use crate::{
     unit::{Unit, UnitError},
     units::Null,
+    Float,
 };
 
 #[derive(Clone, Copy, PartialEq)]
-pub struct Scalar(pub f64, pub Unit);
+pub struct Scalar(pub Float, pub Unit);
 impl Scalar {
-    pub fn value(&self) -> f64 {
+    pub fn value(&self) -> Float {
         self.0
     }
 
@@ -35,9 +36,9 @@ impl Scalar {
         }
     }
 
-    pub fn is_of_unit(&self, unit: Unit) -> Result<(), UnitError> {
+    pub fn get_uniterror(&self, unit: Unit, var: &str) -> Result<(), UnitError> {
         if self.1 != unit {
-            Err(UnitError::expected_unit(unit, self.1))
+            Err(UnitError::expected_unit_of(unit, self.1, var))
         } else {
             Ok(())
         }
@@ -48,7 +49,7 @@ impl Scalar {
     }
 
     /// **This does not raise the units to the given power, use it at your own risk**
-    pub fn powf(self, n: f64) -> Scalar {
+    pub fn powf(self, n: Float) -> Scalar {
         Scalar(self.0.powf(n), self.1)
     }
 
@@ -57,7 +58,14 @@ impl Scalar {
     }
 
     pub fn try_radical(self, n: i32) -> Option<Scalar> {
-        Some(Scalar(self.0.powf(1.0 / n as f64), self.1.try_radical(n)?))
+        Some(Scalar(
+            self.0.powf(1.0 / n as Float),
+            self.1.try_radical(n)?,
+        ))
+    }
+
+    pub fn abs(self) -> Scalar {
+        Scalar(self.0.abs(), self.1)
     }
 }
 
@@ -73,8 +81,8 @@ impl Debug for Scalar {
     }
 }
 
-impl From<f64> for Scalar {
-    fn from(a: f64) -> Self {
+impl From<Float> for Scalar {
+    fn from(a: Float) -> Self {
         Scalar(a, Null)
     }
 }
@@ -100,20 +108,20 @@ impl AddAssign for Scalar {
     }
 }
 
-impl Add<f64> for Scalar {
+impl Add<Float> for Scalar {
     type Output = Scalar;
-    fn add(self, other: f64) -> Scalar {
+    fn add(self, other: Float) -> Scalar {
         Scalar(self.0 + other, self.1)
     }
 }
 
-impl AddAssign<f64> for Scalar {
-    fn add_assign(&mut self, other: f64) {
+impl AddAssign<Float> for Scalar {
+    fn add_assign(&mut self, other: Float) {
         *self = *self + other;
     }
 }
 
-impl Add<Scalar> for f64 {
+impl Add<Scalar> for Float {
     type Output = Scalar;
     fn add(self, other: Scalar) -> Scalar {
         other + self
@@ -126,7 +134,7 @@ impl Sub for Scalar {
     fn sub(self, other: Scalar) -> Scalar {
         if self.1 != other.1 {
             panic!(
-                "Cannot add scalars with different units: {} and {}",
+                "Cannot subtract scalars with different units: {} and {}",
                 self.1, other.1
             );
         }
@@ -141,48 +149,48 @@ impl SubAssign for Scalar {
     }
 }
 
-impl Sub<f64> for Scalar {
+impl Sub<Float> for Scalar {
     type Output = Scalar;
-    fn sub(self, other: f64) -> Scalar {
+    fn sub(self, other: Float) -> Scalar {
         Scalar(self.0 - other, self.1)
     }
 }
 
-impl SubAssign<f64> for Scalar {
-    fn sub_assign(&mut self, other: f64) {
+impl SubAssign<Float> for Scalar {
+    fn sub_assign(&mut self, other: Float) {
         *self = *self - other;
     }
 }
 
-impl Sub<Scalar> for f64 {
+impl Sub<Scalar> for Float {
     type Output = Scalar;
     fn sub(self, other: Scalar) -> Scalar {
         Scalar(self - other.0, other.1)
     }
 }
 
-impl Mul<f64> for Scalar {
+impl Mul<Float> for Scalar {
     type Output = Scalar;
-    fn mul(self, other: f64) -> Scalar {
+    fn mul(self, other: Float) -> Scalar {
         Scalar(self.0 * other, self.1)
     }
 }
 
-impl Mul<Scalar> for f64 {
+impl Mul<Scalar> for Float {
     type Output = Scalar;
     fn mul(self, other: Scalar) -> Scalar {
         other * self
     }
 }
 
-impl Div<f64> for Scalar {
+impl Div<Float> for Scalar {
     type Output = Scalar;
-    fn div(self, other: f64) -> Scalar {
+    fn div(self, other: Float) -> Scalar {
         Scalar(self.0 / other, self.1)
     }
 }
 
-impl Div<Scalar> for f64 {
+impl Div<Scalar> for Float {
     type Output = Scalar;
     fn div(self, other: Scalar) -> Scalar {
         Scalar(self / other.0, Null.div(other.1))
@@ -214,5 +222,49 @@ impl Mul<Unit> for Scalar {
     type Output = Scalar;
     fn mul(self, rhs: Unit) -> Self::Output {
         Scalar(self.0, self.1 * rhs)
+    }
+}
+
+impl Div<Unit> for Scalar {
+    type Output = Scalar;
+    fn div(self, rhs: Unit) -> Self::Output {
+        Scalar(self.0, self.1 / rhs)
+    }
+}
+
+impl PartialOrd for Scalar {
+    #[track_caller]
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.1 != other.1 {
+            panic!(
+                "Cannot compare scalars with different units: {} and {}",
+                self.1, other.1
+            );
+        }
+        self.0.partial_cmp(&other.0)
+    }
+}
+
+impl PartialEq<Float> for Scalar {
+    fn eq(&self, other: &Float) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialEq<Scalar> for Float {
+    fn eq(&self, other: &Scalar) -> bool {
+        *self == other.0
+    }
+}
+
+impl PartialOrd<Float> for Scalar {
+    fn partial_cmp(&self, other: &Float) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(other)
+    }
+}
+
+impl PartialOrd<Scalar> for Float {
+    fn partial_cmp(&self, other: &Scalar) -> Option<std::cmp::Ordering> {
+        self.partial_cmp(&other.0)
     }
 }

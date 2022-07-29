@@ -176,6 +176,7 @@ pub mod units {
     pub const of_magnetic_susceptibility: Unit = m.div(H);
 }
 
+#[allow(clippy::excessive_precision)]
 pub mod constants {
     use super::units::*;
     use crate::Scalar;
