@@ -70,6 +70,21 @@ impl<const T: usize> Vector<T> {
     pub fn as_slice(&self) -> &[Float] {
         &self.0
     }
+
+    pub fn unit_vector(direction: usize) -> Vector<T> {
+        if direction > T {
+            panic!("Vector::unit_vector: direction out of bounds");
+        }
+        let mut a = [0.0; T];
+        a[direction] = 1.0;
+        Vector(a, Null)
+    }
+
+    pub fn add_to_each(&mut self, scalar: Scalar) {
+        for a in self.0.iter_mut() {
+            *a += scalar.value();
+        }
+    }
 }
 
 impl Vector<3> {

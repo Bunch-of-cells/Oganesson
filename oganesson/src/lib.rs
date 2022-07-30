@@ -1,12 +1,14 @@
 #![allow(confusable_idents)]
 
 mod collision;
+mod object;
 mod quantity;
 mod world;
 
 pub use collision::{Collider, Quaternion, Transform};
+pub use object::{Object, ObjectProperty};
 pub use quantity::*;
-pub use world::{Object, PhysicsWorld};
+pub use world::PhysicsWorld;
 
 type Float = f32;
 

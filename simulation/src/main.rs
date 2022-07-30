@@ -68,7 +68,10 @@ impl Game for Simulation {
                         Color::GREEN,
                     );
                 }
-                Collider::Plane { .. } => {
+                Collider::Quad { .. } => {
+                    todo!()
+                }
+                Collider::Polyline { .. } => {
                     todo!()
                 }
             }
