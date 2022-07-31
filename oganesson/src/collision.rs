@@ -11,22 +11,45 @@ pub struct Quaternion {
 #[derive(Debug, Clone)]
 pub struct Transform<const N: usize> {
     pub(crate) position: Vector<N>,
-    pub(crate) scale: Vector<N>,
-    pub(crate) rotation: Quaternion,
+    // pub(crate) scale: Vector<N>,
+    // pub(crate) rotation: Quaternion,
 }
 
 impl<const N: usize> Transform<N> {
+    pub fn new(position: Vector<N>) -> Transform<N> {
+        Transform {
+            position,
+            // scale: Vector([1.0; N], units::Null),
+            // rotation: Quaternion {
+            //     w: 0.0,
+            //     x: 0.0,
+            //     y: 0.0,
+            //     z: 0.0,
+            // },
+        }
+    }
+
     pub fn position(&self) -> Vector<N> {
         self.position
     }
 
-    pub fn scale(&self) -> Vector<N> {
-        self.scale
-    }
+    // pub fn with_scale(mut self, scale: Vector<N>) -> Self {
+    //     self.scale = scale;
+    //     self
+    // }
 
-    pub fn rotation(&self) -> Quaternion {
-        self.rotation
-    }
+    // pub fn with_rotation(mut self, rotation: Quaternion) -> Self {
+    //     self.rotation = rotation;
+    //     self
+    // }
+
+    // pub fn scale(&self) -> Vector<N> {
+    //     self.scale
+    // }
+
+    // pub fn rotation(&self) -> Quaternion {
+    //     self.rotation
+    // }
 }
 
 #[derive(Debug, Clone)]
@@ -119,11 +142,11 @@ pub struct BoundingBox<const N: usize> {
 }
 
 impl<const N: usize> BoundingBox<N> {
-    fn overlaps(&self, other: &BoundingBox<N>) -> bool {
+    pub fn overlaps(&self, other: &BoundingBox<N>) -> bool {
         (0..N).all(|n| self.min[n] <= other.max[n] && self.max[n] >= other.min[n])
     }
 
-    fn center(&self) -> Vector<N> {
+    pub fn center(&self) -> Vector<N> {
         (self.min + self.max) / 2.0
     }
 }

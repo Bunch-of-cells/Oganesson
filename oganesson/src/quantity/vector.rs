@@ -85,6 +85,15 @@ impl<const T: usize> Vector<T> {
             *a += scalar.value();
         }
     }
+
+    pub fn truncate<const U: usize>(&self) -> Vector<U> {
+        assert!(U <= T, "Vector::truncate: Cannot truncate a {}-dimentional vector into a {}-dimentional vector", T, U);
+        let mut new = [0.0; U];
+        for (a, b) in new.iter_mut().zip(self.0.iter()) {
+            *a = *b;
+        }
+        Vector(new, self.1)
+    }
 }
 
 impl Vector<3> {

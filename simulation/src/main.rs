@@ -3,7 +3,7 @@ use coffee::{
     load::Task,
     Error, Game, Timer,
 };
-use oganesson::{units::*, Collider, Object, PhysicsWorld, Scalar, Vector};
+use oganesson::{g, units::*, Collider, Object, PhysicsWorld, Scalar, Vector};
 
 fn main() -> Result<(), Error> {
     Simulation::run(coffee::graphics::WindowSettings {
@@ -27,29 +27,39 @@ impl Game for Simulation {
     where
         Self: Sized,
     {
-        let mut world = PhysicsWorld::new(Vector::zero() * of_acceleration).unwrap();
-        world.add_object(
-            Object::new(
-                Vector([0.0, 400.0], m),
-                Vector([100.0, 0.0], m / s),
-                Scalar(50.0, kg),
-                Collider::Sphere {
-                    radius: Scalar(100.0, m),
-                },
-            )
-            .unwrap(),
-        );
-        world.add_object(
-            Object::new(
-                Vector([1200.0, 400.0], m),
-                Vector([-100.0, 0.0], m / s),
-                Scalar(500.0, kg),
-                Collider::Sphere {
-                    radius: Scalar(100.0, m),
-                },
-            )
-            .unwrap(),
-        );
+        let world = PhysicsWorld::from((
+            g.truncate(),
+            [
+                Object::new(
+                    Vector([0.0, 400.0], m),
+                    Vector([100.0, 0.0], m / s),
+                    Scalar(50.0, kg),
+                    Collider::Sphere {
+                        radius: Scalar(10.0, m),
+                    },
+                )
+                .unwrap(),
+                Object::new(
+                    Vector([1200.0, 400.0], m),
+                    Vector([-100.0, 0.0], m / s),
+                    Scalar(50.0, kg),
+                    Collider::Sphere {
+                        radius: Scalar(10.0, m),
+                    },
+                )
+                .unwrap(),
+                // Object::new(
+                //     Vector([600.0, 0.0], m),
+                //     Vector([0.0, 70.0], m / s),
+                //     Scalar(5000.0, kg),
+                //     Collider::Sphere {
+                //         radius: Scalar(50.0, m),
+                //     },
+                // )
+                // .unwrap()
+                // .with_property(ObjectProperty { is_static: false }),
+            ],
+        ));
         Task::succeed(|| Simulation { world })
     }
 
@@ -57,7 +67,7 @@ impl Game for Simulation {
         frame.clear(Color::BLACK);
         let mut target = frame.as_target();
         let mut mesh = Mesh::new();
-        for object in self.world.objects() {
+        for (i, object) in self.world.objects().iter().enumerate() {
             match object.collider() {
                 Collider::Sphere { radius } => {
                     mesh.fill(
@@ -65,7 +75,7 @@ impl Game for Simulation {
                             center: Point::from_slice(object.transform().position().as_slice()),
                             radius: radius.value(),
                         },
-                        Color::GREEN,
+                        COLORS[i],
                     );
                 }
                 Collider::Quad { .. } => {
@@ -83,3 +93,5 @@ impl Game for Simulation {
         self.world.step((Self::TICKS_PER_SECOND as f32).recip());
     }
 }
+
+const COLORS: [Color; 4] = [Color::BLUE, Color::GREEN, Color::RED, Color::WHITE];

@@ -43,7 +43,6 @@ impl<const N: usize> PhysicsWorld<N> {
         for object in self.objects.iter_mut() {
             object.acceleration += self.gravity;
             object.update(dt);
-            println!("{:?}", object);
         }
     }
 
@@ -68,25 +67,46 @@ impl<const N: usize> PhysicsWorld<N> {
 
     fn resolve_collisions(&mut self, collisions: &[Collision<N>], dt: Scalar) {
         for collision in collisions {
-            let a = &self.objects[collision.a];
-            if a.properties.is_static {
+            println!("Collision: {:?}", collision);
 
-            }
+            let a = &self.objects[collision.a];
+
             let m1 = a.mass;
-            let m2 = a.mass;
+            let v1 = a.velocity;
+            let x1 = a.collider.get_bounding_box(&a.transform).center();
 
             let b = &self.objects[collision.b];
-            let v1 = b.velocity;
+            let m2 = b.mass;
             let v2 = b.velocity;
+            let x2 = b.collider.get_bounding_box(&b.transform).center();
 
-            let v1_prime = (2.0 * m2 * v2 + (m1 - m2) * v1) / (m2 + m1);
-            let v2_prime = (2.0 * m1 * v1 + (m2 - m1) * v2) / (m2 + m1);
+            match (a.properties.is_static, b.properties.is_static) {
+                (true, true) => (),
+                (false, false) => {
+                    let a1 = 2.0 * m1 * (v2 - v1) / (m1 + m2) / dt;
+                    let a2 = 2.0 * m2 * (v1 - v2) / (m1 + m2) / dt;
 
-            let a = &mut self.objects[collision.a];
-            a.acceleration += (v1_prime - v1) / dt;
+                    let a = &mut self.objects[collision.a];
+                    a.acceleration += a1;
 
-            let b = &mut self.objects[collision.b];
-            b.acceleration += (v2_prime - v2) / dt;
+                    let b = &mut self.objects[collision.b];
+                    b.acceleration += a2;
+                }
+                (true, false) => {
+                    let x2_x1_diff = x2 - x1;
+                    let b = &mut self.objects[collision.b];
+                    let v1_prime = (v1 - v2).dot(&x2_x1_diff) / x2_x1_diff.magnitude()
+                        * x2_x1_diff.normalized();
+                    b.acceleration += (v1_prime - v1) / dt
+                }
+                (false, true) => {
+                    let x1_x2_diff = x1 - x2;
+                    let a = &mut self.objects[collision.a];
+                    let v1_prime = (v1 - v2).dot(&x1_x2_diff) / x1_x2_diff.magnitude()
+                        * x1_x2_diff.normalized();
+                    a.acceleration += (v1_prime - v1) / dt
+                }
+            }
         }
     }
 }
@@ -94,5 +114,15 @@ impl<const N: usize> PhysicsWorld<N> {
 impl<const N: usize> Default for PhysicsWorld<N> {
     fn default() -> Self {
         Self::new(Vector::zero() * units::of_acceleration).unwrap()
+    }
+}
+
+impl<const N: usize, const T: usize> From<(Vector<N>, [Object<N>; T])> for PhysicsWorld<N> {
+    fn from(args: (Vector<N>, [Object<N>; T])) -> Self {
+        let mut world = Self::new(args.0).unwrap();
+        for object in args.1.into_iter() {
+            world.add_object(object);
+        }
+        world
     }
 }

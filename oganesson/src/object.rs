@@ -1,11 +1,10 @@
-use crate::{unit::UnitError, units, Collider, Quaternion, Scalar, Transform, Vector};
+use crate::{unit::UnitError, units, Collider, Scalar, Transform, Vector};
 
 #[derive(Clone, Debug)]
 pub struct Object<const N: usize> {
     pub(crate) velocity: Vector<N>,
     pub(crate) mass: Scalar,
     pub(crate) transform: Transform<N>,
-    // last_frame: Option<Transform<N>>,
     pub(crate) acceleration: Vector<N>,
     pub(crate) collider: Collider<N>,
     pub(crate) properties: ObjectProperty,
@@ -42,33 +41,21 @@ impl<const N: usize> Object<N> {
             velocity,
             acceleration: Vector::zero() * units::of_acceleration,
             mass,
-            transform: Transform {
-                position,
-                scale: Vector([1.0; N], units::Null),
-                rotation: Quaternion {
-                    w: 0.0,
-                    x: 0.0,
-                    y: 0.0,
-                    z: 0.0,
-                },
-            },
-            // last_frame: None,
+            transform: Transform::new(position),
             collider,
             properties: ObjectProperty::default(),
         })
     }
 
-    pub(crate) fn with_property(mut self, property: ObjectProperty) -> Self {
+    pub fn with_property(mut self, property: ObjectProperty) -> Self {
         self.properties = property;
         self
     }
 
     pub(crate) fn update(&mut self, dt: Scalar) {
-        if self.properties.is_static {
-            return;
+        if !self.properties.is_static {
+            self.velocity += self.acceleration * dt;
         }
-        // self.last_frame = Some(self.transform.clone());
-        self.velocity += self.acceleration * dt;
         self.transform.position += self.velocity * dt;
         self.acceleration = Vector::zero() * units::of_acceleration;
     }
