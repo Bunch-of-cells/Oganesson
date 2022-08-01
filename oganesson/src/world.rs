@@ -29,6 +29,11 @@ impl<const N: usize> PhysicsWorld<N> {
         self
     }
 
+    pub fn add_objects(&mut self, objects: impl IntoIterator<Item = Object<N>>) -> &mut Self {
+        self.objects.extend(objects);
+        self
+    }
+
     pub fn remove_objects<F>(&mut self, f: F)
     where
         F: FnMut(&Object<N>) -> bool,
@@ -73,12 +78,12 @@ impl<const N: usize> PhysicsWorld<N> {
 
             let m1 = a.mass;
             let v1 = a.velocity;
-            let x1 = a.collider.get_bounding_box(&a.transform).center();
+            // let x1 = a.collider.get_bounding_box(&a.transform).center();
 
             let b = &self.objects[collision.b];
             let m2 = b.mass;
             let v2 = b.velocity;
-            let x2 = b.collider.get_bounding_box(&b.transform).center();
+            // let x2 = b.collider.get_bounding_box(&b.transform).center();
 
             match (a.properties.is_static, b.properties.is_static) {
                 (true, true) => (),
@@ -93,18 +98,15 @@ impl<const N: usize> PhysicsWorld<N> {
                     b.acceleration += a2;
                 }
                 (true, false) => {
-                    let x2_x1_diff = x2 - x1;
-                    let b = &mut self.objects[collision.b];
-                    let v1_prime = (v1 - v2).dot(&x2_x1_diff) / x2_x1_diff.magnitude()
-                        * x2_x1_diff.normalized();
-                    b.acceleration += (v1_prime - v1) / dt
+                    todo!()
                 }
                 (false, true) => {
-                    let x1_x2_diff = x1 - x2;
-                    let a = &mut self.objects[collision.a];
-                    let v1_prime = (v1 - v2).dot(&x1_x2_diff) / x1_x2_diff.magnitude()
-                        * x1_x2_diff.normalized();
-                    a.acceleration += (v1_prime - v1) / dt
+                    todo!()
+                    // let x1_x2_diff = x1 - x2;
+                    // let a = &mut self.objects[collision.a];
+                    // let v1_prime = (v1 - v2).dot(&x1_x2_diff) / x1_x2_diff.magnitude()
+                    //     * x1_x2_diff.normalized();
+                    // a.acceleration += (v1_prime - v1) / dt
                 }
             }
         }

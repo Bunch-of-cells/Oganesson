@@ -8,6 +8,7 @@ pub struct Object<const N: usize> {
     pub(crate) acceleration: Vector<N>,
     pub(crate) collider: Collider<N>,
     pub(crate) properties: ObjectProperty,
+    pub(crate) last_frame: Option<Transform<N>>,
 }
 
 impl<const N: usize> Object<N> {
@@ -44,6 +45,7 @@ impl<const N: usize> Object<N> {
             transform: Transform::new(position),
             collider,
             properties: ObjectProperty::default(),
+            last_frame: None,
         })
     }
 
@@ -53,6 +55,7 @@ impl<const N: usize> Object<N> {
     }
 
     pub(crate) fn update(&mut self, dt: Scalar) {
+        self.last_frame = Some(self.transform.clone());
         if !self.properties.is_static {
             self.velocity += self.acceleration * dt;
         }
@@ -91,13 +94,13 @@ impl<const N: usize> Object<N> {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct ObjectProperty {
     pub is_static: bool,
 }
 
-impl Default for ObjectProperty {
-    fn default() -> Self {
-        ObjectProperty { is_static: false }
-    }
-}
+// impl Default for ObjectProperty {
+//     fn default() -> Self {
+//         ObjectProperty { is_static: false }
+//     }
+// }

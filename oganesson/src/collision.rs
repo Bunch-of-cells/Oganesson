@@ -162,12 +162,13 @@ pub fn possible_collisions<const N: usize>(objects: &[Object<N>]) -> Vec<(usize,
         .map(|(n, obj)| (n, obj.collider.get_bounding_box(&obj.transform)))
         .collect::<Vec<_>>();
 
-    possible_collisions_recursive(&mut objects, 0)
+    possible_collisions_recursive(&mut objects, 0, 0)
 }
 
 fn possible_collisions_recursive<const N: usize>(
     objects: &mut [(usize, BoundingBox<N>)],
     n: usize,
+    n_not: usize,
 ) -> Vec<(usize, usize)> {
     let mut possible_collisions = Vec::new();
 
@@ -189,15 +190,19 @@ fn possible_collisions_recursive<const N: usize>(
         .collect::<Vec<_>>();
 
     if a.len() == objects.len() {
-        for (i, (obj_a, bounds_a)) in a.iter().enumerate() {
-            for (obj_b, bounds_b) in a.iter().skip(i + 1) {
-                if bounds_a.overlaps(bounds_b) {
-                    possible_collisions.push((*obj_a, *obj_b));
+        if n_not >= N {
+            for (i, (obj_a, bounds_a)) in a.iter().enumerate() {
+                for (obj_b, bounds_b) in a.iter().skip(i + 1) {
+                    if bounds_a.overlaps(bounds_b) {
+                        possible_collisions.push((*obj_a, *obj_b));
+                    }
                 }
             }
-        }
 
-        return possible_collisions;
+            return possible_collisions;
+        } else {
+            return possible_collisions_recursive(a.as_mut_slice(), (n + 1) % N, n_not + 1);
+        }
     }
 
     let mut b = objects
@@ -207,15 +212,19 @@ fn possible_collisions_recursive<const N: usize>(
         .collect::<Vec<_>>();
 
     if b.len() == objects.len() {
-        for (i, (obj_a, bounds_a)) in b.iter().enumerate() {
-            for (obj_b, bounds_b) in b.iter().skip(i + 1) {
-                if bounds_a.overlaps(bounds_b) {
-                    possible_collisions.push((*obj_a, *obj_b));
+        if n_not >= N {
+            for (i, (obj_a, bounds_a)) in b.iter().enumerate() {
+                for (obj_b, bounds_b) in b.iter().skip(i + 1) {
+                    if bounds_a.overlaps(bounds_b) {
+                        possible_collisions.push((*obj_a, *obj_b));
+                    }
                 }
             }
-        }
 
-        return possible_collisions;
+            return possible_collisions;
+        } else {
+            return possible_collisions_recursive(b.as_mut_slice(), (n + 1) % N, n_not + 1);
+        }
     }
 
     match a.as_mut_slice() {
@@ -224,8 +233,7 @@ fn possible_collisions_recursive<const N: usize>(
                 possible_collisions.push((*a, *b));
             }
         }
-        [] | [_] => (),
-        a => possible_collisions.append(&mut possible_collisions_recursive(a, (n + 1) % N)),
+        a => possible_collisions.append(&mut possible_collisions_recursive(a, (n + 1) % N, 0)),
     }
 
     match b.as_mut_slice() {
@@ -234,8 +242,7 @@ fn possible_collisions_recursive<const N: usize>(
                 possible_collisions.push((*a, *b));
             }
         }
-        [] | [_] => (),
-        b => possible_collisions.append(&mut possible_collisions_recursive(b, (n + 1) % N)),
+        b => possible_collisions.append(&mut possible_collisions_recursive(b, (n + 1) % N, 0)),
     }
 
     possible_collisions
