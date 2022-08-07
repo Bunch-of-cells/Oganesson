@@ -98,9 +98,3 @@ impl<const N: usize> Object<N> {
 pub struct ObjectProperty {
     pub is_static: bool,
 }
-
-// impl Default for ObjectProperty {
-//     fn default() -> Self {
-//         ObjectProperty { is_static: false }
-//     }
-// }

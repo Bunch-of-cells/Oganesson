@@ -27,8 +27,7 @@ impl Game for Simulation {
     where
         Self: Sized,
     {
-        let mut world = PhysicsWorld::default();
-        world.add_objects([
+        let world = PhysicsWorld::from([
             Object::new(
                 Vector([0.0, 400.0], m),
                 Vector([100.0, 0.0], m / s),

@@ -122,9 +122,15 @@ impl<const N: usize> Default for PhysicsWorld<N> {
 impl<const N: usize, const T: usize> From<(Vector<N>, [Object<N>; T])> for PhysicsWorld<N> {
     fn from(args: (Vector<N>, [Object<N>; T])) -> Self {
         let mut world = Self::new(args.0).unwrap();
-        for object in args.1.into_iter() {
-            world.add_object(object);
-        }
+        world.add_objects(args.1);
+        world
+    }
+}
+
+impl<const N: usize, const T: usize> From<[Object<N>; T]> for PhysicsWorld<N> {
+    fn from(objects: [Object<N>; T]) -> Self {
+        let mut world = Self::default();
+        world.add_objects(objects);
         world
     }
 }
