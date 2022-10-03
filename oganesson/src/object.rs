@@ -27,14 +27,12 @@ impl<const N: usize> Object<N> {
                 radius.get_uniterror(units::m, "collider::sphere::radius")?;
                 assert!(radius.value() >= 0.0);
             }
-            Collider::Quad {
-                dimentions: distance,
-            } => {
-                distance.get_uniterror(units::m, "collider::plane::distance")?;
-            }
-            Collider::Polyline { points } => {
-                assert!(!points.is_empty());
-                todo!()
+
+            Collider::Polygon { ref points } => {
+                assert!(points.len() > N);
+                for point in points {
+                    point.get_uniterror(units::Null, "collider::polygon::points")?;
+                }
             }
         }
 

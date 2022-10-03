@@ -55,8 +55,7 @@ impl<const N: usize> Transform<N> {
 #[derive(Debug, Clone)]
 pub enum Collider<const N: usize> {
     Sphere { radius: Scalar },
-    Quad { dimentions: Vector<N> },
-    Polyline { points: Vec<Vector<N>> },
+    Polygon { points: Vec<Vector<N>> },
 }
 
 impl<const N: usize> Collider<N> {
@@ -78,21 +77,10 @@ impl<const N: usize> Collider<N> {
                 }
             }
 
-            (&Collider::Sphere { .. }, &Collider::Quad { .. }) => None,
-            (&Collider::Quad { .. }, &Collider::Quad { .. }) => None,
-            (&Collider::Quad { .. }, Collider::Polyline { .. }) => None,
-            (Collider::Polyline { .. }, &Collider::Sphere { .. }) => None,
-            (Collider::Polyline { .. }, Collider::Polyline { .. }) => None,
+            (Collider::Polygon { .. }, &Collider::Sphere { .. }) => None,
+            (Collider::Polygon { .. }, Collider::Polygon { .. }) => None,
 
-            (Collider::Quad { .. }, Collider::Sphere { .. }) => collider
-                .is_collision(collider_transform, self, transform)
-                .map(|v| -v),
-
-            (Collider::Sphere { .. }, Collider::Polyline { .. }) => collider
-                .is_collision(collider_transform, self, transform)
-                .map(|v| -v),
-
-            (Collider::Polyline { .. }, Collider::Quad { .. }) => collider
+            (Collider::Sphere { .. }, Collider::Polygon { .. }) => collider
                 .is_collision(collider_transform, self, transform)
                 .map(|v| -v),
         }
@@ -108,16 +96,28 @@ impl<const N: usize> Collider<N> {
                 max.add_to_each(*radius);
                 BoundingBox { min, max }
             }
-            Collider::Quad { dimentions } => {
-                let position = transform.position;
-                BoundingBox {
-                    min: position,
-                    max: position + *dimentions,
+
+            Collider::Polygon { points } =>  {
+                let mut mins = [0.0; N];
+                let mut maxs = [0.0; N];
+                for i in 0..N {
+                    let mut min = points.first().unwrap()[i];
+                    let mut max = points.first().unwrap()[i];
+                    for point in points {
+                        if point[i] > max {
+                            max = point[i];
+                        } else if point[i] < min {
+                            min = point[i];
+                        }
+                    }
+                    mins[i] = min;
+                    maxs[i] = max;
                 }
-            }
-            Collider::Polyline { .. } => {
-                todo!()
-            }
+                BoundingBox {
+                    min: Vector::from(mins),
+                    max: Vector::from(maxs),
+                }
+            },
         }
     }
 }
@@ -179,6 +179,7 @@ fn possible_collisions_recursive<const N: usize>(
     });
 
     let median = match objects.len() {
+        0 => return Vec::new(),
         x if x % 2 == 0 => (objects[x / 2].1.center()[n] + objects[x / 2 - 1].1.center()[n]) / 2.0,
         x => objects[(x - 1) / 2].1.center()[n],
     };

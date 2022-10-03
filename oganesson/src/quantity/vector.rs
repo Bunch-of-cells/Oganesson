@@ -10,8 +10,8 @@ use crate::{
 };
 
 #[derive(Clone, Copy, PartialEq)]
-pub struct Vector<const T: usize>(pub [Float; T], pub Unit);
-impl<const T: usize> Vector<T> {
+pub struct Vector<const N: usize>(pub [Float; N], pub Unit);
+impl<const N: usize> Vector<N> {
     pub fn magnitude(&self) -> Scalar {
         Scalar(
             self.0.iter().fold(0.0, |acc, &x| acc + x.powi(2)).sqrt(),
@@ -19,23 +19,23 @@ impl<const T: usize> Vector<T> {
         )
     }
 
-    pub fn normalized(&self) -> Vector<T> {
+    pub fn normalized(&self) -> Vector<N> {
         let magnitude = self.magnitude();
         *self / magnitude
     }
 
-    pub fn zero() -> Vector<T> {
-        Vector([0.0; T], Null)
+    pub fn zero() -> Vector<N> {
+        Vector([0.0; N], Null)
     }
 
-    pub fn dot(&self, other: &Vector<T>) -> Scalar {
+    pub fn dot(&self, other: &Vector<N>) -> Scalar {
         self.0
             .iter()
             .zip(other.0.iter())
             .fold(Scalar(0.0, self.1 * other.1), |acc, (&x, &y)| acc + x + y)
     }
 
-    pub fn checked_add(self, other: Vector<T>) -> Option<Vector<T>> {
+    pub fn checked_add(self, other: Vector<N>) -> Option<Vector<N>> {
         if self.1 != other.1 {
             None
         } else {
@@ -43,7 +43,7 @@ impl<const T: usize> Vector<T> {
         }
     }
 
-    pub fn checked_sub(self, other: Vector<T>) -> Option<Vector<T>> {
+    pub fn checked_sub(self, other: Vector<N>) -> Option<Vector<N>> {
         if self.1 != other.1 {
             None
         } else {
@@ -71,11 +71,11 @@ impl<const T: usize> Vector<T> {
         &self.0
     }
 
-    pub fn unit_vector(direction: usize) -> Vector<T> {
-        if direction > T {
+    pub fn unit_vector(direction: usize) -> Vector<N> {
+        if direction > N {
             panic!("Vector::unit_vector: direction out of bounds");
         }
-        let mut a = [0.0; T];
+        let mut a = [0.0; N];
         a[direction] = 1.0;
         Vector(a, Null)
     }
@@ -87,7 +87,7 @@ impl<const T: usize> Vector<T> {
     }
 
     pub fn truncate<const U: usize>(&self) -> Vector<U> {
-        assert!(U <= T, "Vector::truncate: Cannot truncate a {}-dimentional vector into a {}-dimentional vector", T, U);
+        assert!(U <= N, "Vector::truncate: Cannot truncate a {}-dimentional vector into a {}-dimentional vector", N, U);
         let mut new = [0.0; U];
         for (a, b) in new.iter_mut().zip(self.0.iter()) {
             *a = *b;
@@ -122,7 +122,7 @@ impl<const T: usize> Debug for Vector<T> {
             "{} {}",
             self.0
                 .iter()
-                .fold(String::new(), |acc, &x| acc + &format!("{:.2} ", x))
+                .fold(String::new(), |acc, &x| acc + &format!("{:.2?} ", x))
                 .trim(),
             self.1,
         )

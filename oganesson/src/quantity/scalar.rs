@@ -77,7 +77,7 @@ impl Default for Scalar {
 
 impl Debug for Scalar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}", self.0, self.1,)
+        write!(f, "{:.2?} {}", self.0, self.1,)
     }
 }
 
