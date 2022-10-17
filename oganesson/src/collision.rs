@@ -77,7 +77,7 @@ impl<const N: usize> Collider<N> {
                 }
             }
 
-            (Collider::Polygon { .. }, &Collider::Sphere { .. }) => None,
+            (Collider::Polygon { .. }, Collider::Sphere { .. }) => None,
             (Collider::Polygon { .. }, Collider::Polygon { .. }) => None,
 
             (Collider::Sphere { .. }, Collider::Polygon { .. }) => collider
@@ -97,7 +97,7 @@ impl<const N: usize> Collider<N> {
                 BoundingBox { min, max }
             }
 
-            Collider::Polygon { points } =>  {
+            Collider::Polygon { points } => {
                 let mut mins = [0.0; N];
                 let mut maxs = [0.0; N];
                 for i in 0..N {
@@ -117,7 +117,7 @@ impl<const N: usize> Collider<N> {
                     min: Vector::from(mins),
                     max: Vector::from(maxs),
                 }
-            },
+            }
         }
     }
 }
@@ -159,7 +159,7 @@ pub fn possible_collisions<const N: usize>(objects: &[Object<N>]) -> Vec<(usize,
     let mut objects = objects
         .iter()
         .enumerate()
-        .map(|(n, obj)| (n, obj.collider.get_bounding_box(&obj.transform)))
+        .map(|(n, obj)| (n, obj.collider().get_bounding_box(obj.transform())))
         .collect::<Vec<_>>();
 
     possible_collisions_recursive(&mut objects, 0, 0)
@@ -184,11 +184,11 @@ fn possible_collisions_recursive<const N: usize>(
         x => objects[(x - 1) / 2].1.center()[n],
     };
 
-    let mut a = objects
+    let mut a: Vec<_> = objects
         .iter()
         .filter(|(_, bounds)| median > bounds.min[n])
         .cloned()
-        .collect::<Vec<_>>();
+        .collect();
 
     if a.len() == objects.len() {
         if n_not >= N {
@@ -206,11 +206,11 @@ fn possible_collisions_recursive<const N: usize>(
         }
     }
 
-    let mut b = objects
+    let mut b: Vec<_> = objects
         .iter()
         .filter(|(_, bounds)| median < bounds.min[n])
         .cloned()
-        .collect::<Vec<_>>();
+        .collect();
 
     if b.len() == objects.len() {
         if n_not >= N {

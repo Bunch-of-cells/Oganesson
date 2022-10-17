@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 bevy = "0.8.1"
 oganesson = { path = "../oganesson" }
+rand = "0.8.5"

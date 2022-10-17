@@ -24,7 +24,7 @@ impl Scalar {
         if self.1 != other.1 {
             None
         } else {
-            Some(self + other)
+            Some(Scalar(self.0 + other.0, self.1))
         }
     }
 
@@ -32,7 +32,7 @@ impl Scalar {
         if self.1 != other.1 {
             None
         } else {
-            Some(self - other)
+            Some(Scalar(self.0 - other.0, self.1))
         }
     }
 
@@ -67,6 +67,10 @@ impl Scalar {
     pub fn abs(self) -> Scalar {
         Scalar(self.0.abs(), self.1)
     }
+
+    pub fn squared(self) -> Scalar {
+        Scalar(self.0.powi(2), self.1.pow(2))
+    }
 }
 
 impl Default for Scalar {
@@ -91,13 +95,12 @@ impl Add for Scalar {
     type Output = Scalar;
     #[track_caller]
     fn add(self, other: Scalar) -> Scalar {
-        if self.1 != other.1 {
+        self.checked_add(other).unwrap_or_else(|| {
             panic!(
                 "Cannot add scalars with different units: {} and {}",
                 self.1, other.1
-            );
-        }
-        Scalar(self.0 + other.0, self.1)
+            )
+        })
     }
 }
 
@@ -132,13 +135,12 @@ impl Sub for Scalar {
     type Output = Scalar;
     #[track_caller]
     fn sub(self, other: Scalar) -> Scalar {
-        if self.1 != other.1 {
+        self.checked_add(other).unwrap_or_else(|| {
             panic!(
                 "Cannot subtract scalars with different units: {} and {}",
                 self.1, other.1
-            );
-        }
-        Scalar(self.0 - other.0, self.1)
+            )
+        })
     }
 }
 

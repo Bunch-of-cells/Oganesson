@@ -60,6 +60,9 @@ pub mod units {
     /// Ohm
     pub const Ω: Unit = V.div(A);
 
+    /// Ohm
+    pub const Ohm: Unit = Ω;
+
     /// Siemens
     pub const S: Unit = Ω.div(A);
 
@@ -187,6 +190,9 @@ pub mod constants {
     /// speed of light in vacuum
     pub const c: Scalar = Scalar(299792458.0, m.div(s));
 
+    /// speed of light in vacuum squared
+    pub const c2: Scalar = Scalar(89875517873681764.0, m.div(s));
+
     /// Planck constant
     pub const h: Scalar = Scalar(6.62607015e-34, J.div(Hz));
 
@@ -196,11 +202,17 @@ pub mod constants {
     /// Vacuum magnetic permeability
     pub const μ_0: Scalar = Scalar(1.25663706212e-6, N.div(A.pow(2)));
 
+    /// Vacuum magnetic permeability
+    pub const MagneticPermiability: Scalar = μ_0;
+
     /// Characteristic impedance of vacuum
     pub const Z_0: Scalar = Scalar(376.730313668, Ω);
 
     /// Vacuum electric permittivity
     pub const ε_0: Scalar = Scalar(8.8541878128e-12, C.div(V).div(m));
+
+    /// Vacuum electric permittivity
+    pub const ElectricPermittivity: Scalar = ε_0;
 
     /// Coulomb constant
     pub const k_e: Scalar = Scalar(8.9875517923e9, N.mul(m.div(C).pow(2)));
@@ -210,6 +222,9 @@ pub mod constants {
 
     /// Stefan–Boltzmann constant
     pub const σ: Scalar = Scalar(5.670374419e-8, W.div(m.pow(2)).div(K.pow(4)));
+
+    /// Stefan–Boltzmann constant
+    pub const StefanBoltzmannConst: Scalar = σ;
 
     /// First radiation constant
     pub const c_1: Scalar = Scalar(33.741771852e-16, W.div(m.pow(2)));
@@ -247,8 +262,14 @@ pub mod constants {
     /// Fine-structure constant
     pub const α: Scalar = Scalar(7.2973525693e-3, Null);
 
+    /// Fine-structure constant
+    pub const FineStructureConst: Scalar = α;
+
     /// Inverse fine-structure constant
     pub const α_inv: Scalar = Scalar(137.035999084, Null);
+
+    /// Inverse fine-structure constant
+    pub const FineStructureConstInv: Scalar = α_inv;
 
     /// Electron mass
     pub const m_e: Scalar = Scalar(9.1093837015e-31, kg);
@@ -262,8 +283,14 @@ pub mod constants {
     /// Muon mass
     pub const m_μ: Scalar = Scalar(1.883531627e-28, kg);
 
+    /// Muon mass
+    pub const MuonMass: Scalar = m_μ;
+
     /// Tau mass
     pub const m_τ: Scalar = Scalar(3.16754e-27, kg);
+
+    /// Tau mass
+    pub const TauMass: Scalar = m_τ;
 
     /// Top quark mass
     pub const m_t: Scalar = Scalar(3.0784e-25, kg);
@@ -277,11 +304,17 @@ pub mod constants {
     /// Weak mixing angle
     pub const sin2_θ_W: Scalar = Scalar(0.22290, Null);
 
+    /// Weak mixing angle
+    pub const WeakMixingAngle: Scalar = sin2_θ_W;
+
     /// Electron g-factor
     pub const g_e: Scalar = Scalar(-2.00231930436256, Null);
 
     /// Muon g-factor
     pub const g_μ: Scalar = Scalar(-2.0023318418, Null);
+
+    /// Muon g-factor
+    pub const MuonGFactor: Scalar = g_μ;
 
     /// Proton g-factor
     pub const g_p: Scalar = Scalar(5.5856946893, Null);
@@ -300,6 +333,9 @@ pub mod constants {
 
     /// Thomson cross section
     pub const σ_e: Scalar = Scalar(6.6524587321e-29, m.pow(2));
+
+    /// Thomson cross section
+    pub const ThomsonCrossSection: Scalar = σ_e;
 
     /// Bohr radius
     pub const a_0: Scalar = Scalar(5.29177210903e-11, m);
@@ -345,6 +381,21 @@ pub mod constants {
 
     /// Hyperfine transition frequency of 133Cs
     pub const ΔνCs: Scalar = Scalar(9192631770.0, Hz);
+
+    /// Hyperfine transition frequency of 133Cs
+    pub const TransitionFrequency133Cs: Scalar = ΔνCs;
+
+    /// Cosmological sonstant
+    pub const Λ: Scalar = Scalar(2.036e-35, s.pow(-2));
+
+    /// Cosmological sonstant
+    pub const CosmologicalConstant: Scalar = Λ;
+
+    /// Einstein gravitational constant
+    pub const κ: Scalar = Scalar(2.076579e-43, N.recip());
+
+    /// Einstein gravitational constant
+    pub const EinsteinGravitationalConstant: Scalar = κ;
 }
 
 use crate::Vector;

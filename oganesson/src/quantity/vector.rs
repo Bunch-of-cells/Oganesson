@@ -28,6 +28,10 @@ impl<const N: usize> Vector<N> {
         Vector([0.0; N], Null)
     }
 
+    pub fn is_zero(&self) -> bool {
+        self.0.iter().all(|&x| x == 0.0)
+    }
+
     pub fn dot(&self, other: &Vector<N>) -> Scalar {
         self.0
             .iter()
@@ -39,7 +43,14 @@ impl<const N: usize> Vector<N> {
         if self.1 != other.1 {
             None
         } else {
-            Some(self + other)
+            let mut result = [0.0; N];
+            self.0
+                .iter()
+                .zip(other.0.iter())
+                .map(|(&x, &y)| x + y)
+                .zip(result.iter_mut())
+                .for_each(|(new, curr)| *curr = new);
+            Some(Vector(result, self.1))
         }
     }
 
@@ -47,7 +58,15 @@ impl<const N: usize> Vector<N> {
         if self.1 != other.1 {
             None
         } else {
-            Some(self - other)
+            let mut result = [0.0; N];
+            self.0
+                .iter()
+                .zip(other.0.iter())
+                .map(|(&x, &y)| x - y)
+                .zip(result.iter_mut())
+                .for_each(|(new, curr)| *curr = new);
+
+            Some(Vector(result, self.1))
         }
     }
 
@@ -139,20 +158,12 @@ impl<const T: usize> Add for Vector<T> {
     type Output = Vector<T>;
     #[track_caller]
     fn add(self, other: Vector<T>) -> Vector<T> {
-        if self.1 != other.1 {
+        self.checked_add(other).unwrap_or_else(|| {
             panic!(
                 "Cannot add vectors with different units: {} and {}",
                 self.1, other.1
-            );
-        }
-        let mut result = [0.0; T];
-        self.0
-            .iter()
-            .zip(other.0.iter())
-            .map(|(&x, &y)| x + y)
-            .zip(result.iter_mut())
-            .for_each(|(new, curr)| *curr = new);
-        Vector(result, self.1)
+            )
+        })
     }
 }
 
@@ -167,20 +178,12 @@ impl<const T: usize> Sub for Vector<T> {
     type Output = Vector<T>;
     #[track_caller]
     fn sub(self, other: Vector<T>) -> Vector<T> {
-        if self.1 != other.1 {
+        self.checked_add(other).unwrap_or_else(|| {
             panic!(
-                "Cannot add vectors with different units: {} and {}",
+                "Cannot subtract vectors with different units: {} and {}",
                 self.1, other.1
-            );
-        }
-        let mut result = [0.0; T];
-        self.0
-            .iter()
-            .zip(other.0.iter())
-            .map(|(&x, &y)| x - y)
-            .zip(result.iter_mut())
-            .for_each(|(new, curr)| *curr = new);
-        Vector(result, self.1)
+            )
+        })
     }
 }
 
