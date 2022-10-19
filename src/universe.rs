@@ -1,16 +1,17 @@
 use crate::{
     collision::{possible_collisions, Collision},
+    constants,
     scalar::Scalar,
-    units, Float, Object,
+    units, Float, Object, Vector,
 };
 
-pub struct PhysicsWorld<const N: usize> {
+pub struct Universe<const N: usize> {
     objects: Vec<Object<N>>,
 }
 
-impl<const N: usize> PhysicsWorld<N> {
-    pub fn new() -> PhysicsWorld<N> {
-        PhysicsWorld {
+impl<const N: usize> Universe<N> {
+    pub fn new() -> Universe<N> {
+        Universe {
             objects: Vec::new(),
         }
     }
@@ -39,9 +40,30 @@ impl<const N: usize> PhysicsWorld<N> {
     pub fn step(&mut self, dt: Float) {
         let dt = dt * units::s;
         let collisions = self.find_collisions();
+        let electric_field = self.electric_field();
         self.resolve_collisions(&collisions, dt);
         for object in self.objects.iter_mut() {
+            object
+                .apply_force(electric_field(object.position()))
+                .unwrap();
             object.update(dt);
+        }
+    }
+
+    pub fn electric_field(&mut self) -> impl Fn(Vector<N>) -> Vector<N> {
+        let charge_pos = self
+            .objects
+            .iter()
+            .map(|object| (object.charge(), object.position()))
+            .collect::<Vec<_>>();
+        move |x| {
+            constants::k_e
+                * charge_pos.iter().fold(
+                    Vector::zero() * units::of_electric_field_strength,
+                    |acc, &(charge, pos)| {
+                        acc + charge / (pos - x).magnitude().squared() * (pos - x).normalized()
+                    },
+                )
         }
     }
 
@@ -60,11 +82,10 @@ impl<const N: usize> PhysicsWorld<N> {
                 });
             }
         }
-
         collisions
     }
 
-    fn resolve_collisions(&mut self, collisions: &[Collision<N>], dt: Scalar) {
+    fn resolve_collisions(&mut self, collisions: &[Collision<N>], _dt: Scalar) {
         for collision in collisions {
             println!("Collision: {:?}", collision);
 
@@ -109,13 +130,13 @@ impl<const N: usize> PhysicsWorld<N> {
     }
 }
 
-impl<const N: usize> Default for PhysicsWorld<N> {
+impl<const N: usize> Default for Universe<N> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<const N: usize, const T: usize> From<[Object<N>; T]> for PhysicsWorld<N> {
+impl<const N: usize, const T: usize> From<[Object<N>; T]> for Universe<N> {
     fn from(objects: [Object<N>; T]) -> Self {
         let mut world = Self::new();
         world.add_objects(objects);

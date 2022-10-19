@@ -5,6 +5,7 @@ pub struct Object<const N: usize> {
     velocity: [Vector<N>; 4],
     intrinsic: IntrinsicProperty<N>,
     transform: [Transform<N>; 2],
+    force: Vector<N>,
 }
 
 impl<const N: usize> Object<N> {
@@ -61,17 +62,29 @@ impl<const N: usize> Object<N> {
             velocity: [velocity; 4],
             transform: [Transform::new(position), Transform::new(position)],
             intrinsic,
+            force: Vector::zero() * units::N,
         })
     }
 
     pub(crate) fn update(&mut self, dt: Scalar) {
-        let velocity =
-            (self.velocity[0] + 3.0 * self.velocity[1] + 3.0 * self.velocity[2] + self.velocity[3])
+        let acceleration = self.force / self.mass();
+        self.force = Vector::zero() * units::N;
+        let velocity = acceleration
+            + (self.velocity[0]
+                + 3.0 * self.velocity[1]
+                + 3.0 * self.velocity[2]
+                + self.velocity[3])
                 * 3.0
                 / 8.0;
         self.transform[1].position += velocity * dt;
         self.velocity.rotate_left(1);
         self.velocity[3] = velocity;
+    }
+
+    pub fn apply_force(&mut self, force: Vector<N>) -> Result<(), UnitError> {
+        force.get_uniterror(units::N, "force")?;
+        self.force += force;
+        Ok(())
     }
 
     pub fn is_collision(&self, other: &Object<N>) -> Option<Vector<N>> {
@@ -100,7 +113,7 @@ impl<const N: usize> Object<N> {
                 let x = self.transform[0].position; // previous velocity (of last frame)
                 let n = normal + c;
                 let i = x + (x - c).dot(&n) / v.dot(&n) * v;
-                todo!()
+                todo!("{i:?}")
                 // Some(i)
             }
 
@@ -117,6 +130,10 @@ impl<const N: usize> Object<N> {
     #[inline(always)]
     pub fn mass(&self) -> Scalar {
         self.intrinsic.mass
+    }
+
+    pub fn charge(&self) -> Scalar {
+        self.intrinsic.charge
     }
 
     #[inline(always)]

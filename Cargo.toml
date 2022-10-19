@@ -1,8 +1,14 @@
-[workspace]
+[package]
+name = "oganesson"
+version = "0.1.0"
+edition = "2021"
 
-members = [
-    "oganesson",
-    "simulation",
-]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-resolver = "2"
+[dependencies]
+ggez = { version="0.7.0", optional = true }
+
+[features]
+default = ["simulation"]
+simulation = ["dep:ggez"]
+relativistic = []
