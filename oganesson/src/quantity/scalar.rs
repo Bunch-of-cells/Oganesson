@@ -1,6 +1,6 @@
 use std::{
     fmt::Debug,
-    ops::{Add, AddAssign, Div, Mul, Neg, Sub, SubAssign},
+    ops::{Add, AddAssign, Deref, DerefMut, Div, Mul, Neg, Sub, SubAssign},
 };
 
 use crate::{
@@ -11,6 +11,7 @@ use crate::{
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Scalar(pub Float, pub Unit);
+
 impl Scalar {
     pub fn value(&self) -> Float {
         self.0
@@ -268,5 +269,18 @@ impl PartialOrd<Float> for Scalar {
 impl PartialOrd<Scalar> for Float {
     fn partial_cmp(&self, other: &Scalar) -> Option<std::cmp::Ordering> {
         self.partial_cmp(&other.0)
+    }
+}
+
+impl Deref for Scalar {
+    type Target = Float;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Scalar {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }

@@ -11,95 +11,50 @@ pub struct Quaternion {
 #[derive(Debug, Clone)]
 pub struct Transform<const N: usize> {
     pub(crate) position: Vector<N>,
-    // pub(crate) scale: Vector<N>,
-    // pub(crate) rotation: Quaternion,
 }
 
 impl<const N: usize> Transform<N> {
     pub fn new(position: Vector<N>) -> Transform<N> {
-        Transform {
-            position,
-            // scale: Vector([1.0; N], units::Null),
-            // rotation: Quaternion {
-            //     w: 0.0,
-            //     x: 0.0,
-            //     y: 0.0,
-            //     z: 0.0,
-            // },
-        }
+        Transform { position }
     }
 
     pub fn position(&self) -> Vector<N> {
         self.position
     }
-
-    // pub fn with_scale(mut self, scale: Vector<N>) -> Self {
-    //     self.scale = scale;
-    //     self
-    // }
-
-    // pub fn with_rotation(mut self, rotation: Quaternion) -> Self {
-    //     self.rotation = rotation;
-    //     self
-    // }
-
-    // pub fn scale(&self) -> Vector<N> {
-    //     self.scale
-    // }
-
-    // pub fn rotation(&self) -> Quaternion {
-    //     self.rotation
-    // }
 }
 
 #[derive(Debug, Clone)]
 pub enum Collider<const N: usize> {
-    Sphere { radius: Scalar },
-    Polygon { points: Vec<Vector<N>> },
+    Sphere {
+        radius: Scalar,
+    },
+    Triangle {
+        a: Vector<N>,
+        b: Vector<N>,
+        c: Vector<N>,
+    },
+    Plane {
+        normal: Vector<N>,
+    },
+    Polygon {
+        points: Vec<Vector<N>>,
+    },
 }
 
 impl<const N: usize> Collider<N> {
-    pub fn is_collision(
-        &self,
-        transform: &Transform<N>,
-        collider: &Collider<N>,
-        collider_transform: &Transform<N>,
-    ) -> Option<Vector<N>> {
-        match (self, collider) {
-            (&Collider::Sphere { radius: r1 }, &Collider::Sphere { radius: r2 }) => {
-                let distance = transform.position - collider_transform.position;
-                let direction = distance.normalized();
-                let distance = distance.magnitude().abs();
-                if distance >= r1 + r2 {
-                    None
-                } else {
-                    Some(direction * (r1 + r2 - distance))
-                }
-            }
-
-            (Collider::Polygon { .. }, Collider::Sphere { .. }) => None,
-            (Collider::Polygon { .. }, Collider::Polygon { .. }) => None,
-
-            (Collider::Sphere { .. }, Collider::Polygon { .. }) => collider
-                .is_collision(collider_transform, self, transform)
-                .map(|v| -v),
-        }
-    }
-
     pub fn get_bounding_box(&self, transform: &Transform<N>) -> BoundingBox<N> {
         match self {
             Collider::Sphere { radius } => {
                 let position = transform.position;
                 let mut min = position;
-                min.add_to_each(-*radius);
+                min.0.iter_mut().for_each(|a| *a -= radius.value());
                 let mut max = position;
-                max.add_to_each(*radius);
+                max.0.iter_mut().for_each(|a| *a += radius.value());
                 BoundingBox { min, max }
             }
 
             Collider::Polygon { points } => {
-                let mut mins = [0.0; N];
-                let mut maxs = [0.0; N];
+                let mut dist_from_center = [0.0; N];
                 for i in 0..N {
                     let mut min = points.first().unwrap()[i];
                     let mut max = points.first().unwrap()[i];
@@ -110,29 +65,25 @@ impl<const N: usize> Collider<N> {
                             min = point[i];
                         }
                     }
-                    mins[i] = min;
-                    maxs[i] = max;
+                    dist_from_center[i] = (max - min) / 2.0;
                 }
+                let position = transform.position;
+                let dist_from_center = Vector::from(dist_from_center);
                 BoundingBox {
-                    min: Vector::from(mins),
-                    max: Vector::from(maxs),
+                    min: position - dist_from_center,
+                    max: position + dist_from_center,
                 }
             }
+            _ => todo!(),
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Collision<const N: usize> {
-    pub a: usize,
-    pub b: usize,
+    pub obj_a: usize,
+    pub obj_b: usize,
     pub direction: Vector<N>,
-}
-
-impl<const N: usize> Collision<N> {
-    pub fn new(a: usize, b: usize, direction: Vector<N>) -> Collision<N> {
-        Collision { a, b, direction }
-    }
 }
 
 #[derive(Debug, Clone)]

@@ -11,6 +11,7 @@ use crate::{
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Vector<const N: usize>(pub [Float; N], pub Unit);
+
 impl<const N: usize> Vector<N> {
     pub fn magnitude(&self) -> Scalar {
         Scalar(
@@ -36,7 +37,7 @@ impl<const N: usize> Vector<N> {
         self.0
             .iter()
             .zip(other.0.iter())
-            .fold(Scalar(0.0, self.1 * other.1), |acc, (&x, &y)| acc + x + y)
+            .fold(Scalar(0.0, self.1 * other.1), |acc, (&x, &y)| acc + x * y)
     }
 
     pub fn checked_add(self, other: Vector<N>) -> Option<Vector<N>> {
@@ -99,19 +100,44 @@ impl<const N: usize> Vector<N> {
         Vector(a, Null)
     }
 
-    pub fn add_to_each(&mut self, scalar: Scalar) {
-        for a in self.0.iter_mut() {
-            *a += scalar.value();
+    pub fn truncated<const M: usize>(&self) -> Vector<M> {
+        if M == N {
+            return Vector(unsafe { std::mem::transmute_copy(&self.0) }, self.1);
         }
-    }
-
-    pub fn truncate<const U: usize>(&self) -> Vector<U> {
-        assert!(U <= N, "Vector::truncate: Cannot truncate a {}-dimentional vector into a {}-dimentional vector", N, U);
-        let mut new = [0.0; U];
+        assert!(M < N, "Vector::truncate: Cannot truncate a {}-dimentional vector into a {}-dimentional vector", N, M);
+        let mut new = [0.0; M];
         for (a, b) in new.iter_mut().zip(self.0.iter()) {
             *a = *b;
         }
         Vector(new, self.1)
+    }
+
+    pub fn project(self, on: &Vector<N>) -> Self {
+        self.dot(on) / on.magnitude() * on.normalized()
+    }
+
+    pub fn angle_to(&self, other: &Vector<N>) -> Float {
+        (self.dot(other) / (self.magnitude() * other.magnitude())).acos()
+    }
+}
+
+impl Vector<2> {
+    /// (r, φ)
+    pub fn polar_coords(&self) -> (Scalar, Float) {
+        let [x, y] = self.0;
+        let r = self.magnitude();
+        let φ = if r.abs() <= Float::EPSILON {
+            todo!()
+        } else if y.is_sign_negative() {
+            -(x / r).acos()
+        } else {
+            (x / r).acos()
+        };
+        (r, φ)
+    }
+
+    pub fn from_spherical_coords(r: Scalar, θ: Float) -> Self {
+        Vector([r.value() * θ.cos(), r.value() * θ.sin()], r.unit())
     }
 }
 
@@ -125,6 +151,45 @@ impl Vector<3> {
             ],
             self.1 * other.1,
         )
+    }
+
+    /// (r, θ, φ)
+    pub fn spherical_coords(&self) -> (Scalar, Float, Float) {
+        let [x, y, z] = self.0;
+        let r = self.magnitude();
+        let θ = (z / r).acos();
+        let r_xy = x.hypot(y);
+        let φ = if r_xy.abs() <= Float::EPSILON {
+            todo!()
+        } else if y.is_sign_negative() {
+            -(x / r_xy).acos()
+        } else {
+            (x / r_xy).acos()
+        };
+        (r, θ, φ)
+    }
+
+    pub fn from_spherical_coords(r: Scalar, θ: Float, φ: Float) -> Self {
+        Vector(
+            [
+                r.value() * θ.sin() * φ.cos(),
+                r.value() * θ.sin() * φ.sin(),
+                r.value() * θ.cos(),
+            ],
+            r.unit(),
+        )
+    }
+
+    /// (ρ, φ, z)
+    pub fn cylindrical_coords(&self) -> (Scalar, Float, Float) {
+        let (r, θ, φ) = self.spherical_coords();
+        (r * θ.sin(), φ, r.value() * θ.cos())
+    }
+
+    pub fn from_cylindrical_coords(ρ: Scalar, φ: Float, z: Float) -> Self {
+        let r = (ρ * ρ + z * z).sqrt();
+        let θ = (z / r).atan();
+        Self::from_spherical_coords(r * ρ.unit(), θ, φ)
     }
 }
 

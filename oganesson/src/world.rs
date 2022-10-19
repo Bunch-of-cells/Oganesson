@@ -52,12 +52,12 @@ impl<const N: usize> PhysicsWorld<N> {
         for (a, b) in possible_collisions {
             let obj_a = &self.objects[a];
             let obj_b = &self.objects[b];
-            if let Some(direction) = obj_a.collider().is_collision(
-                obj_a.transform(),
-                obj_b.collider(),
-                obj_b.transform(),
-            ) {
-                collisions.push(Collision::new(a, b, direction));
+            if let Some(direction) = obj_a.is_collision(obj_b) {
+                collisions.push(Collision {
+                    obj_a: a,
+                    obj_b: b,
+                    direction,
+                });
             }
         }
 
@@ -68,13 +68,13 @@ impl<const N: usize> PhysicsWorld<N> {
         for collision in collisions {
             println!("Collision: {:?}", collision);
 
-            let a = &self.objects[collision.a];
+            let a = &self.objects[collision.obj_a];
 
             // let m1 = a.mass();
             // let v1 = a.velocity();
             // // let x1 = a.collider.get_bounding_box(&a.transform).center();
 
-            let b = &self.objects[collision.b];
+            let b = &self.objects[collision.obj_b];
             // let m2 = b.mass();
             // let v2 = b.velocity();
             // let x2 = b.collider.get_bounding_box(&b.transform).center();

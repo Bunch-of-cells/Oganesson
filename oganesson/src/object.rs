@@ -4,7 +4,7 @@ use crate::{unit::UnitError, units, Collider, Scalar, Transform, Vector};
 pub struct Object<const N: usize> {
     velocity: [Vector<N>; 4],
     intrinsic: IntrinsicProperty<N>,
-    transform: Transform<N>,
+    transform: [Transform<N>; 2],
 }
 
 impl<const N: usize> Object<N> {
@@ -21,7 +21,7 @@ impl<const N: usize> Object<N> {
         match intrinsic.collider {
             Collider::Sphere { radius } => {
                 radius.get_uniterror(units::m, "collider::sphere::radius")?;
-                assert!(radius.value() >= 0.0);
+                assert!(radius.value() > 0.0);
             }
 
             Collider::Polygon { ref points } => {
@@ -29,6 +29,15 @@ impl<const N: usize> Object<N> {
                 for point in points {
                     point.get_uniterror(units::Null, "collider::polygon::points")?;
                 }
+            }
+            Collider::Plane { normal } => {
+                normal.get_uniterror(units::Null, "collider::line::normal")?;
+                assert!(normal.magnitude() > 0.0);
+            }
+            Collider::Triangle { a, b, c } => {
+                a.get_uniterror(units::Null, "collider::triange::a")?;
+                b.get_uniterror(units::Null, "collider::triange::a")?;
+                c.get_uniterror(units::Null, "collider::triange::a")?;
             }
         }
 
@@ -50,7 +59,7 @@ impl<const N: usize> Object<N> {
 
         Ok(Object {
             velocity: [velocity; 4],
-            transform: Transform::new(position),
+            transform: [Transform::new(position), Transform::new(position)],
             intrinsic,
         })
     }
@@ -60,9 +69,43 @@ impl<const N: usize> Object<N> {
             (self.velocity[0] + 3.0 * self.velocity[1] + 3.0 * self.velocity[2] + self.velocity[3])
                 * 3.0
                 / 8.0;
-        self.transform.position += velocity * dt;
+        self.transform[1].position += velocity * dt;
         self.velocity.rotate_left(1);
         self.velocity[3] = velocity;
+    }
+
+    pub fn is_collision(&self, other: &Object<N>) -> Option<Vector<N>> {
+        match (self.collider(), other.collider()) {
+            (&Collider::Sphere { radius: r1 }, &Collider::Sphere { radius: r2 }) => {
+                let distance = self.position() - other.position();
+                let direction = distance.normalized();
+                let distance = distance.magnitude().abs();
+                if distance >= r1 + r2 {
+                    None
+                } else {
+                    Some(direction * (r1 + r2 - distance))
+                }
+            }
+
+            (Collider::Polygon { .. }, Collider::Sphere { .. }) => None,
+            (Collider::Polygon { .. }, Collider::Polygon { .. }) => None,
+
+            (Collider::Sphere { .. }, Collider::Polygon { .. }) => {
+                other.is_collision(self).map(|v| -v)
+            }
+
+            (Collider::Sphere { .. }, &Collider::Plane { normal }) => {
+                let c = other.position();
+                let v = self.velocity[2]; // previous velocity (of last frame)
+                let x = self.transform[0].position; // previous velocity (of last frame)
+                let n = normal + c;
+                let i = x + (x - c).dot(&n) / v.dot(&n) * v;
+                todo!()
+                // Some(i)
+            }
+
+            _ => todo!(),
+        }
     }
 
     #[inline(always)]
@@ -78,12 +121,12 @@ impl<const N: usize> Object<N> {
 
     #[inline(always)]
     pub fn transform(&self) -> &Transform<N> {
-        &self.transform
+        &self.transform[1]
     }
 
     #[inline(always)]
     pub fn position(&self) -> Vector<N> {
-        self.transform.position
+        self.transform[1].position
     }
 
     #[inline(always)]
