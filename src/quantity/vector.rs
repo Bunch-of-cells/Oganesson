@@ -3,6 +3,8 @@ use std::{
     ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Neg, Sub, SubAssign},
 };
 
+use ggez::mint::{Point2, Point3};
+
 use crate::{
     unit::{Unit, UnitError},
     units::Null,
@@ -25,12 +27,12 @@ impl<const N: usize> Vector<N> {
         *self / magnitude
     }
 
-    pub fn zero() -> Vector<N> {
+    pub const fn zero() -> Vector<N> {
         Vector([0.0; N], Null)
     }
 
     pub fn is_zero(&self) -> bool {
-        self.0.iter().all(|&x| x == 0.0)
+        self.0.iter().all(|&x| x.abs() <= Float::EPSILON)
     }
 
     pub fn dot(&self, other: &Vector<N>) -> Scalar {
@@ -79,7 +81,7 @@ impl<const N: usize> Vector<N> {
         }
     }
 
-    pub fn unit(&self) -> Unit {
+    pub const fn unit(&self) -> Unit {
         self.1
     }
 
@@ -87,11 +89,12 @@ impl<const N: usize> Vector<N> {
         self.dot(&self)
     }
 
-    pub fn as_slice(&self) -> &[Float] {
+    pub const fn as_slice(&self) -> &[Float] {
         &self.0
     }
 
-    pub fn unit_vector(direction: usize) -> Vector<N> {
+    #[track_caller]
+    pub const fn unit_vector(direction: usize) -> Vector<N> {
         if direction > N {
             panic!("Vector::unit_vector: direction out of bounds");
         }
@@ -101,15 +104,8 @@ impl<const N: usize> Vector<N> {
     }
 
     pub fn truncated<const M: usize>(&self) -> Vector<M> {
-        if M == N {
-            return Vector(unsafe { std::mem::transmute_copy(&self.0) }, self.1);
-        }
         assert!(M < N, "Vector::truncate: Cannot truncate a {}-dimentional vector into a {}-dimentional vector", N, M);
-        let mut new = [0.0; M];
-        for (a, b) in new.iter_mut().zip(self.0.iter()) {
-            *a = *b;
-        }
-        Vector(new, self.1)
+        Vector(unsafe { std::mem::transmute_copy(&self.0) }, self.1)
     }
 
     pub fn project(self, on: &Vector<N>) -> Self {
@@ -122,6 +118,7 @@ impl<const N: usize> Vector<N> {
 }
 
 impl Vector<2> {
+    #[track_caller]
     /// (r, φ)
     pub fn polar_coords(&self) -> (Scalar, Float) {
         let [x, y] = self.0;
@@ -153,6 +150,7 @@ impl Vector<3> {
         )
     }
 
+    #[track_caller]
     /// (r, θ, φ)
     pub fn spherical_coords(&self) -> (Scalar, Float, Float) {
         let [x, y, z] = self.0;
@@ -180,12 +178,14 @@ impl Vector<3> {
         )
     }
 
+    #[track_caller]
     /// (ρ, φ, z)
     pub fn cylindrical_coords(&self) -> (Scalar, Float, Float) {
         let (r, θ, φ) = self.spherical_coords();
         (r * θ.sin(), φ, r.value() * θ.cos())
     }
 
+    #[track_caller]
     pub fn from_cylindrical_coords(ρ: Scalar, φ: Float, z: Float) -> Self {
         let r = (ρ * ρ + z * z).sqrt();
         let θ = (z / r).atan();
@@ -223,12 +223,13 @@ impl<const T: usize> Add for Vector<T> {
     type Output = Vector<T>;
     #[track_caller]
     fn add(self, other: Vector<T>) -> Vector<T> {
-        self.checked_add(other).unwrap_or_else(|| {
-            panic!(
+        match self.checked_add(other) {
+            Some(v) => v,
+            None => panic!(
                 "Cannot add vectors with different units: {} and {}",
                 self.1, other.1
-            )
-        })
+            ),
+        }
     }
 }
 
@@ -243,12 +244,13 @@ impl<const T: usize> Sub for Vector<T> {
     type Output = Vector<T>;
     #[track_caller]
     fn sub(self, other: Vector<T>) -> Vector<T> {
-        self.checked_add(other).unwrap_or_else(|| {
-            panic!(
+        match self.checked_sub(other) {
+            Some(v) => v,
+            None => panic!(
                 "Cannot subtract vectors with different units: {} and {}",
                 self.1, other.1
-            )
-        })
+            ),
+        }
     }
 }
 
@@ -356,5 +358,19 @@ impl<const T: usize> Div<Unit> for Vector<T> {
     type Output = Vector<T>;
     fn div(self, rhs: Unit) -> Self::Output {
         Vector(self.0, self.1 / rhs)
+    }
+}
+
+#[cfg(feature = "simulation")]
+impl From<Vector<2>> for Point2<Float> {
+    fn from(vector: Vector<2>) -> Self {
+        vector.0.into()
+    }
+}
+
+#[cfg(feature = "simulation")]
+impl From<Vector<3>> for Point3<Float> {
+    fn from(vector: Vector<3>) -> Self {
+        vector.0.into()
     }
 }

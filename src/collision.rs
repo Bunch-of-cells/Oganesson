@@ -83,7 +83,7 @@ impl<const N: usize> Collider<N> {
 pub struct Collision<const N: usize> {
     pub obj_a: usize,
     pub obj_b: usize,
-    pub direction: Vector<N>,
+    pub normal: Vector<N>,
 }
 
 #[derive(Debug, Clone)]

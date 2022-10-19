@@ -44,7 +44,7 @@ impl<const N: usize> Universe<N> {
         self.resolve_collisions(&collisions, dt);
         for object in self.objects.iter_mut() {
             object
-                .apply_force(electric_field(object.position()))
+                .apply_force(electric_field(object.position()) * object.charge())
                 .unwrap();
             object.update(dt);
         }
@@ -59,9 +59,14 @@ impl<const N: usize> Universe<N> {
         move |x| {
             constants::k_e
                 * charge_pos.iter().fold(
-                    Vector::zero() * units::of_electric_field_strength,
+                    Vector::zero() * units::of_electric_field_strength.div(constants::k_e.unit()),
                     |acc, &(charge, pos)| {
-                        acc + charge / (pos - x).magnitude().squared() * (pos - x).normalized()
+                        let diff = x - pos;
+                        if diff.is_zero() {
+                            acc
+                        } else {
+                            acc + charge / diff.magnitude().squared() * diff.normalized()
+                        }
                     },
                 )
         }
@@ -74,11 +79,11 @@ impl<const N: usize> Universe<N> {
         for (a, b) in possible_collisions {
             let obj_a = &self.objects[a];
             let obj_b = &self.objects[b];
-            if let Some(direction) = obj_a.is_collision(obj_b) {
+            if let Some(normal) = obj_a.is_collision(obj_b) {
                 collisions.push(Collision {
                     obj_a: a,
                     obj_b: b,
-                    direction,
+                    normal,
                 });
             }
         }

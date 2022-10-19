@@ -13,11 +13,11 @@ use crate::{
 pub struct Scalar(pub Float, pub Unit);
 
 impl Scalar {
-    pub fn value(&self) -> Float {
+    pub const fn value(&self) -> Float {
         self.0
     }
 
-    pub fn zero() -> Scalar {
+    pub const fn zero() -> Scalar {
         Scalar(0.0, Null)
     }
 
@@ -45,7 +45,7 @@ impl Scalar {
         }
     }
 
-    pub fn unit(&self) -> Unit {
+    pub const fn unit(&self) -> Unit {
         self.1
     }
 

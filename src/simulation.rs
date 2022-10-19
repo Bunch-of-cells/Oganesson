@@ -1,36 +1,60 @@
-use ggez::event;
-use ggez::graphics::{self, Color};
-use ggez::{Context, GameResult};
+use std::ops::{Deref, DerefMut};
 
-pub struct MainState {
-    pos_x: f32,
+use ggez::graphics::{self, Color, DrawMode, Mesh};
+use ggez::timer::delta;
+use ggez::{event::EventHandler, Context, GameResult};
+
+use crate::Collider;
+
+#[derive(Default)]
+pub struct Universe {
+    universe: crate::Universe<2>,
 }
 
-impl MainState {
-    pub fn new() -> GameResult<MainState> {
-        let s = MainState { pos_x: 500.0 };
-        Ok(s)
+impl Universe {
+    pub fn new() -> Universe {
+        Self {
+            universe: crate::Universe::new(),
+        }
     }
 }
 
-impl event::EventHandler<ggez::GameError> for MainState {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        self.pos_x = self.pos_x % 800.0 + 1.0;
+impl Deref for Universe {
+    type Target = crate::Universe<2>;
+    fn deref(&self) -> &Self::Target {
+        &self.universe
+    }
+}
+
+impl DerefMut for Universe {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.universe
+    }
+}
+
+impl EventHandler for Universe {
+    fn update(&mut self, ctx: &mut Context) -> GameResult {
+        self.universe.step(delta(ctx).as_secs_f32());
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
+        graphics::clear(ctx, Color::WHITE);
 
-        let circle = graphics::Mesh::new_circle(
-            ctx,
-            graphics::DrawMode::fill(),
-            [0.0, 0.0],
-            100.0,
-            0.1,
-            Color::WHITE,
-        )?;
-        graphics::draw(ctx, &circle, ([self.pos_x, 380.0],))?;
+        for object in self.objects() {
+            let color = object.color();
+            let mesh = match object.collider() {
+                &Collider::Sphere { radius } => {
+                    Mesh::new_circle(ctx, DrawMode::fill(), [0.0, 0.0], *radius, 0.5, color)?
+                }
+                &Collider::Triangle { a, b, c } => Mesh::from_triangles(ctx, &[a, b, c], color)?,
+                Collider::Plane { .. } => todo!(),
+                Collider::Polygon { points } => {
+                    Mesh::new_polygon(ctx, DrawMode::fill(), points, color)?
+                }
+            };
+            graphics::draw(ctx, &mesh, (object.position(),))?;
+        }
 
         graphics::present(ctx)?;
         Ok(())

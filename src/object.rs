@@ -1,5 +1,8 @@
 use crate::{unit::UnitError, units, Collider, Scalar, Transform, Vector};
 
+#[cfg(feature = "simulation")]
+use ggez::graphics::Color;
+
 #[derive(Clone, Debug)]
 pub struct Object<const N: usize> {
     velocity: [Vector<N>; 4],
@@ -69,13 +72,13 @@ impl<const N: usize> Object<N> {
     pub(crate) fn update(&mut self, dt: Scalar) {
         let acceleration = self.force / self.mass();
         self.force = Vector::zero() * units::N;
-        let velocity = acceleration
+        let velocity = acceleration * dt
             + (self.velocity[0]
                 + 3.0 * self.velocity[1]
                 + 3.0 * self.velocity[2]
                 + self.velocity[3])
-                * 3.0
                 / 8.0;
+        self.transform.rotate_left(1);
         self.transform[1].position += velocity * dt;
         self.velocity.rotate_left(1);
         self.velocity[3] = velocity;
@@ -229,6 +232,12 @@ impl<const N: usize> Object<N> {
     pub fn rest_mass(&self) -> Scalar {
         self.intrinsic.mass
     }
+
+    #[cfg(feature = "simulation")]
+    #[inline(always)]
+    pub fn color(&self) -> Color {
+        self.intrinsic.color
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -237,16 +246,82 @@ pub struct IntrinsicProperty<const N: usize> {
     pub charge: Scalar,
     pub collider: Collider<N>,
     pub attributes: ObjectAttributes,
+    #[cfg(feature = "simulation")]
+    pub color: Color,
 }
 
 impl<const N: usize> IntrinsicProperty<N> {
-    pub fn new(mass: Scalar, collider: Collider<N>) -> IntrinsicProperty<N> {
-        Self {
+    #[cfg(not(feature = "simulation"))]
+    pub fn new(mass: Scalar, collider: Collider<N>) -> Result<IntrinsicProperty<N>, UnitError> {
+        mass.get_uniterror(units::kg, "mass")?;
+
+        match collider {
+            Collider::Sphere { radius } => {
+                radius.get_uniterror(units::m, "collider::sphere::radius")?;
+                assert!(radius.value() > 0.0);
+            }
+
+            Collider::Polygon { ref points } => {
+                assert!(points.len() > N);
+                for point in points {
+                    point.get_uniterror(units::Null, "collider::polygon::points")?;
+                }
+            }
+            Collider::Plane { normal } => {
+                normal.get_uniterror(units::Null, "collider::line::normal")?;
+                assert!(normal.magnitude() > 0.0);
+            }
+            Collider::Triangle { a, b, c } => {
+                a.get_uniterror(units::Null, "collider::triange::a")?;
+                b.get_uniterror(units::Null, "collider::triange::a")?;
+                c.get_uniterror(units::Null, "collider::triange::a")?;
+            }
+        }
+        Ok(Self {
             mass,
             collider,
             attributes: ObjectAttributes::default(),
             charge: Scalar::zero() * units::C,
+        })
+    }
+
+    #[cfg(feature = "simulation")]
+    pub fn new(
+        mass: Scalar,
+        collider: Collider<N>,
+        color: Color,
+    ) -> Result<IntrinsicProperty<N>, UnitError> {
+        mass.get_uniterror(units::kg, "mass")?;
+
+        match collider {
+            Collider::Sphere { radius } => {
+                radius.get_uniterror(units::m, "collider::sphere::radius")?;
+                assert!(radius.value() > 0.0);
+            }
+
+            Collider::Polygon { ref points } => {
+                assert!(points.len() > N);
+                for point in points {
+                    point.get_uniterror(units::Null, "collider::polygon::points")?;
+                }
+            }
+            Collider::Plane { normal } => {
+                normal.get_uniterror(units::Null, "collider::line::normal")?;
+                assert!(normal.magnitude() > 0.0);
+            }
+            Collider::Triangle { a, b, c } => {
+                a.get_uniterror(units::Null, "collider::triange::a")?;
+                b.get_uniterror(units::Null, "collider::triange::a")?;
+                c.get_uniterror(units::Null, "collider::triange::a")?;
+            }
         }
+        Ok(Self {
+            mass,
+            collider,
+            attributes: ObjectAttributes::default(),
+            charge: Scalar::zero() * units::C,
+            color,
+        })
     }
 
     pub fn with_charge(mut self, charge: Scalar) -> Result<IntrinsicProperty<N>, UnitError> {
