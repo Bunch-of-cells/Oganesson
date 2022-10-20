@@ -91,44 +91,48 @@ impl<const N: usize> Universe<N> {
     }
 
     fn resolve_collisions(&mut self, collisions: &[Collision<N>], _dt: Scalar) {
-        for collision in collisions {
-            println!("Collision: {:?}", collision);
+        for &Collision {
+            obj_a,
+            obj_b,
+            normal,
+        } in collisions
+        {
+            let a = &self.objects[obj_a];
+            let b = &self.objects[obj_b];
 
-            let a = &self.objects[collision.obj_a];
+            if a.attributes().is_static && b.attributes().is_static {
+                continue;
+            }
 
-            // let m1 = a.mass();
-            // let v1 = a.velocity();
-            // // let x1 = a.collider.get_bounding_box(&a.transform).center();
+            let u_a = a.velocity();
+            let u_b = b.velocity();
+            let m_a = a.mass();
+            let m_b = b.mass();
+            let e = a
+                .attributes()
+                .restitution_coefficient
+                .max(b.attributes().restitution_coefficient);
+            let n = normal.normalized();
 
-            let b = &self.objects[collision.obj_b];
-            // let m2 = b.mass();
-            // let v2 = b.velocity();
-            // let x2 = b.collider.get_bounding_box(&b.transform).center();
+            let j = -(1.0 + e) * (u_a - u_b).dot(&n) / (m_a.recip() + m_b.recip());
+            let n_j = j * n;
 
             match (a.attributes().is_static, b.attributes().is_static) {
                 (true, true) => (),
                 (false, false) => {
-                    // let a1 = 2.0 * m1 * (v2 - v1) / (m1 + m2) / dt;
-                    // let a2 = 2.0 * m2 * (v1 - v2) / (m1 + m2) / dt;
+                    let v_a = n_j / m_a;
+                    let v_b = -n_j / m_b;
 
-                    // let a = &mut self.objects[collision.a];
-                    // // a.force += a1;
-
-                    // let b = &mut self.objects[collision.b];
-                    // b.force += a2;
-
-                    todo!()
-                }
-                (true, false) => {
-                    todo!()
+                    self.objects[obj_a].set_velocity(v_a);
+                    self.objects[obj_b].set_velocity(v_b);
                 }
                 (false, true) => {
-                    todo!()
-                    // let x1_x2_diff = x1 - x2;
-                    // let a = &mut self.objects[collision.a];
-                    // let v1_prime = (v1 - v2).dot(&x1_x2_diff) / x1_x2_diff.magnitude()
-                    //     * x1_x2_diff.normalized();
-                    // a.acceleration += (v1_prime - v1) / dt
+                    let v_a = n_j / m_a;
+                    self.objects[obj_a].set_velocity(v_a);
+                }
+                (true, false) => {
+                    let v_b = -n_j / m_b;
+                    self.objects[obj_b].set_velocity(v_b);
                 }
             }
         }

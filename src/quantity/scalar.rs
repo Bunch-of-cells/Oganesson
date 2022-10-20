@@ -72,6 +72,10 @@ impl Scalar {
     pub fn squared(self) -> Scalar {
         Scalar(self.0.powi(2), self.1.pow(2))
     }
+
+    pub fn recip(self) -> Scalar {
+        Scalar(self.0.recip(), self.1.recip())
+    }
 }
 
 impl Default for Scalar {

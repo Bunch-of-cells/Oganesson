@@ -39,7 +39,7 @@ impl<const N: usize> Vector<N> {
         self.0
             .iter()
             .zip(other.0.iter())
-            .fold(Scalar(0.0, self.1 * other.1), |acc, (&x, &y)| acc + x * y)
+            .fold(Scalar(0.0, self.1 * other.1), |acc, (&x1, &x2)| acc + x1 * x2)
     }
 
     pub fn checked_add(self, other: Vector<N>) -> Option<Vector<N>> {

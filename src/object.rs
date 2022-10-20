@@ -1,4 +1,4 @@
-use crate::{unit::UnitError, units, Collider, Scalar, Transform, Vector};
+use crate::{unit::UnitError, units, Collider, Float, Scalar, Transform, Vector};
 
 #[cfg(feature = "simulation")]
 use ggez::graphics::Color;
@@ -70,15 +70,15 @@ impl<const N: usize> Object<N> {
     }
 
     pub(crate) fn update(&mut self, dt: Scalar) {
-        let acceleration = self.force / self.mass();
-        self.force = Vector::zero() * units::N;
+        let acceleration = self.acceleration();
         let velocity = acceleration * dt
             + (self.velocity[0]
                 + 3.0 * self.velocity[1]
                 + 3.0 * self.velocity[2]
                 + self.velocity[3])
                 / 8.0;
-        self.transform.rotate_left(1);
+        self.transform[0] = self.transform[1].clone();
+        assert!(dt > 0.0);
         self.transform[1].position += velocity * dt;
         self.velocity.rotate_left(1);
         self.velocity[3] = velocity;
@@ -88,6 +88,11 @@ impl<const N: usize> Object<N> {
         force.get_uniterror(units::N, "force")?;
         self.force += force;
         Ok(())
+    }
+
+    pub(crate) fn set_velocity(&mut self, velocity: Vector<N>) {
+        // self.velocity.rotate_left(1);
+        self.velocity = [velocity; 4];
     }
 
     pub fn is_collision(&self, other: &Object<N>) -> Option<Vector<N>> {
@@ -122,6 +127,12 @@ impl<const N: usize> Object<N> {
 
             _ => todo!(),
         }
+    }
+
+    fn acceleration(&mut self) -> Vector<N> {
+        let acceleration = self.force / self.mass();
+        self.force = Vector::zero() * units::N;
+        acceleration
     }
 
     #[inline(always)]
@@ -336,7 +347,17 @@ impl<const N: usize> IntrinsicProperty<N> {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct ObjectAttributes {
     pub is_static: bool,
+    pub restitution_coefficient: Float,
+}
+
+impl Default for ObjectAttributes {
+    fn default() -> Self {
+        Self {
+            is_static: false,
+            restitution_coefficient: 0.0,
+        }
+    }
 }
