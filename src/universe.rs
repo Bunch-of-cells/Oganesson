@@ -120,18 +120,18 @@ impl<const N: usize> Universe<N> {
             match (a.attributes().is_static, b.attributes().is_static) {
                 (true, true) => (),
                 (false, false) => {
-                    let v_a = n_j / m_a;
-                    let v_b = -n_j / m_b;
+                    let v_a = u_a + n_j / m_a;
+                    let v_b = u_b - n_j / m_b;
 
                     self.objects[obj_a].set_velocity(v_a);
                     self.objects[obj_b].set_velocity(v_b);
                 }
                 (false, true) => {
-                    let v_a = n_j / m_a;
+                    let v_a = u_a + n_j / m_a;
                     self.objects[obj_a].set_velocity(v_a);
                 }
                 (true, false) => {
-                    let v_b = -n_j / m_b;
+                    let v_b = u_b - n_j / m_b;
                     self.objects[obj_b].set_velocity(v_b);
                 }
             }

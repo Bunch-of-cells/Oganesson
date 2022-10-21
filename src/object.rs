@@ -78,7 +78,6 @@ impl<const N: usize> Object<N> {
                 + self.velocity[3])
                 / 8.0;
         self.transform[0] = self.transform[1].clone();
-        assert!(dt > 0.0);
         self.transform[1].position += velocity * dt;
         self.velocity.rotate_left(1);
         self.velocity[3] = velocity;
@@ -91,7 +90,6 @@ impl<const N: usize> Object<N> {
     }
 
     pub(crate) fn set_velocity(&mut self, velocity: Vector<N>) {
-        // self.velocity.rotate_left(1);
         self.velocity = [velocity; 4];
     }
 
@@ -357,7 +355,7 @@ impl Default for ObjectAttributes {
     fn default() -> Self {
         Self {
             is_static: false,
-            restitution_coefficient: 0.0,
+            restitution_coefficient: 1.0,
         }
     }
 }
