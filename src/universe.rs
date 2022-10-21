@@ -41,10 +41,14 @@ impl<const N: usize> Universe<N> {
         let dt = dt * units::s;
         let collisions = self.find_collisions();
         let electric_field = self.electric_field();
+        let gravitational_field = self.gravitational_field();
         self.resolve_collisions(&collisions, dt);
         for object in self.objects.iter_mut() {
             object
-                .apply_force(electric_field(object.position()) * object.charge())
+                .apply_force(
+                    electric_field(object.position()) * object.charge()
+                        + gravitational_field(object.position()) * object.mass(),
+                )
                 .unwrap();
             object.update(dt);
         }
@@ -59,13 +63,36 @@ impl<const N: usize> Universe<N> {
         move |x| {
             constants::k_e
                 * charge_pos.iter().fold(
-                    Vector::zero() * units::of_electric_field_strength.div(constants::k_e.unit()),
+                    Vector::zero() * units::of_electric_field_strength / constants::k_e.unit(),
                     |acc, &(charge, pos)| {
                         let diff = x - pos;
                         if diff.is_zero() {
                             acc
                         } else {
                             acc + charge / diff.magnitude().squared() * diff.normalized()
+                        }
+                    },
+                )
+        }
+    }
+
+    /// Classical Newtonian Gravitation
+    pub fn gravitational_field(&mut self) -> impl Fn(Vector<N>) -> Vector<N> {
+        let mass_pos = self
+            .objects
+            .iter()
+            .map(|object| (object.mass(), object.position()))
+            .collect::<Vec<_>>();
+        move |x| {
+            constants::G
+                * mass_pos.iter().fold(
+                    Vector::zero() * units::kg / units::m.pow(2),
+                    |acc, &(mass, pos)| {
+                        let diff = x - pos;
+                        if diff.is_zero() {
+                            acc
+                        } else {
+                            acc - mass / diff.magnitude().squared() * diff.normalized()
                         }
                     },
                 )

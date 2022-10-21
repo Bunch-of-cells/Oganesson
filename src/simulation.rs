@@ -49,10 +49,10 @@ impl EventHandler for Universe {
         if self.paused {
             return Ok(());
         }
-        graphics::clear(ctx, Color::WHITE);
+        graphics::clear(ctx, Color::BLACK);
 
         for object in self.objects() {
-            println!("{:?}", object);
+            // println!("{:?}", object);
             let color = object.color();
             let mesh = match object.collider() {
                 &Collider::Sphere { radius } => {

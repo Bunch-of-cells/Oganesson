@@ -71,6 +71,7 @@ impl<const N: usize> Object<N> {
 
     pub(crate) fn update(&mut self, dt: Scalar) {
         let acceleration = self.acceleration();
+        self.force = Vector::zero() * units::N;
         let velocity = acceleration * dt
             + (self.velocity[0]
                 + 3.0 * self.velocity[1]
@@ -107,30 +108,30 @@ impl<const N: usize> Object<N> {
             }
 
             (Collider::Polygon { .. }, Collider::Sphere { .. }) => None,
-            (Collider::Polygon { .. }, Collider::Polygon { .. }) => None,
-
             (Collider::Sphere { .. }, Collider::Polygon { .. }) => {
                 other.is_collision(self).map(|v| -v)
             }
 
-            (Collider::Sphere { .. }, &Collider::Plane { normal }) => {
+            (&Collider::Sphere { radius: _r }, &Collider::Plane { normal: n }) => {
                 let c = other.position();
                 let v = self.velocity[2]; // previous velocity (of last frame)
                 let x = self.transform[0].position; // previous velocity (of last frame)
-                let n = normal + c;
                 let i = x + (x - c).dot(&n) / v.dot(&n) * v;
                 todo!("{i:?}")
                 // Some(i)
+            }
+            (Collider::Plane { .. }, Collider::Sphere { .. }) => {
+                other.is_collision(self).map(|v| -v)
             }
 
             _ => todo!(),
         }
     }
 
-    fn acceleration(&mut self) -> Vector<N> {
-        let acceleration = self.force / self.mass();
-        self.force = Vector::zero() * units::N;
-        acceleration
+    #[cfg(not(feature = "relativistic"))]
+    #[inline(always)]
+    pub fn acceleration(&mut self) -> Vector<N> {
+        self.force / self.mass()
     }
 
     #[inline(always)]
@@ -240,6 +241,14 @@ impl<const N: usize> Object<N> {
     #[inline(always)]
     pub fn rest_mass(&self) -> Scalar {
         self.intrinsic.mass
+    }
+
+    #[cfg(feature = "relativistic")]
+    #[inline(always)]
+    pub fn acceleration(&mut self) -> Vector<N> {
+        self.inv_lorentz_factor() / self.mass()
+            * (self.force
+                - self.force.dot(&self.velocity()) * self.velocity() / crate::constants::c2)
     }
 
     #[cfg(feature = "simulation")]

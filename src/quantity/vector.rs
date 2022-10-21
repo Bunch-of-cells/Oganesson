@@ -135,8 +135,16 @@ impl Vector<2> {
         (r, φ)
     }
 
-    pub fn from_spherical_coords(r: Scalar, θ: Float) -> Self {
+    pub fn from_polar_coords(r: Scalar, θ: Float) -> Self {
         Vector([r.value() * θ.cos(), r.value() * θ.sin()], r.unit())
+    }
+
+    pub fn perpendicular(&self, clockwise: bool) -> Self {
+        if clockwise {
+            Vector([-self.0[1], self.0[0]], self.1)
+        } else {
+            Vector([self.0[1], -self.0[0]], self.1)
+        }
     }
 }
 
