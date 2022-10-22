@@ -7,12 +7,71 @@ use std::{
 use crate::{Float, Scalar};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(non_camel_case_types)]
+pub enum SIPrefix {
+    /// yotta
+    Y = 24,
+    /// zetta
+    Z = 21,
+    /// exa
+    E = 18,
+    /// peta
+    P = 15,
+    /// tera
+    T = 12,
+    /// giga
+    G = 9,
+    /// mega
+    M = 6,
+    /// kilo
+    k = 3,
+    /// hecto
+    h = 2,
+    /// deca
+    da = 1,
+    /// deci
+    d = -1,
+    /// centi
+    c = -2,
+    /// milli
+    m = -3,
+    /// micro,
+    μ = -6,
+    /// nano
+    n = -9,
+    /// pico
+    p = -12,
+    /// femto
+    f = -15,
+    /// atto
+    a = -18,
+    /// zepto
+    z = -21,
+    /// yocto
+    y = -24,
+}
+
+impl Mul<Float> for SIPrefix {
+    type Output = Scalar;
+    fn mul(self, rhs: Float) -> Self::Output {
+        Scalar(rhs * Float::powi(10.0, self as _), Unit::NONE)
+    }
+}
+
+impl Mul<SIPrefix> for Float {
+    type Output = Scalar;
+    fn mul(self, rhs: SIPrefix) -> Self::Output {
+        rhs * self
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Unit {
+    pub time: i32,
     pub length: i32,
     pub mass: i32,
-    pub time: i32,
-    pub temperature: i32,
-    pub current: i32,
+    pub electric_current: i32,
+    pub thermodynamic_temperature: i32,
     pub amount_of_substance: i32,
     pub luminous_intensity: i32,
 }
@@ -22,8 +81,8 @@ impl Unit {
         length: 0,
         mass: 0,
         time: 0,
-        temperature: 0,
-        current: 0,
+        thermodynamic_temperature: 0,
+        electric_current: 0,
         amount_of_substance: 0,
         luminous_intensity: 0,
     };
@@ -33,8 +92,8 @@ impl Unit {
         length: 0,
         mass: 0,
         time: 1,
-        temperature: 0,
-        current: 0,
+        thermodynamic_temperature: 0,
+        electric_current: 0,
         amount_of_substance: 0,
         luminous_intensity: 0,
     };
@@ -44,8 +103,8 @@ impl Unit {
         length: 1,
         mass: 0,
         time: 0,
-        temperature: 0,
-        current: 0,
+        thermodynamic_temperature: 0,
+        electric_current: 0,
         amount_of_substance: 0,
         luminous_intensity: 0,
     };
@@ -55,8 +114,8 @@ impl Unit {
         length: 0,
         mass: 1,
         time: 0,
-        temperature: 0,
-        current: 0,
+        thermodynamic_temperature: 0,
+        electric_current: 0,
         amount_of_substance: 0,
         luminous_intensity: 0,
     };
@@ -66,8 +125,8 @@ impl Unit {
         length: 0,
         mass: 0,
         time: 0,
-        temperature: 0,
-        current: 1,
+        thermodynamic_temperature: 0,
+        electric_current: 1,
         amount_of_substance: 0,
         luminous_intensity: 0,
     };
@@ -77,8 +136,8 @@ impl Unit {
         length: 0,
         mass: 0,
         time: 0,
-        temperature: 1,
-        current: 0,
+        thermodynamic_temperature: 1,
+        electric_current: 0,
         amount_of_substance: 0,
         luminous_intensity: 0,
     };
@@ -88,8 +147,8 @@ impl Unit {
         length: 0,
         mass: 0,
         time: 0,
-        temperature: 0,
-        current: 0,
+        thermodynamic_temperature: 0,
+        electric_current: 0,
         amount_of_substance: 1,
         luminous_intensity: 0,
     };
@@ -99,8 +158,8 @@ impl Unit {
         length: 0,
         mass: 0,
         time: 0,
-        temperature: 0,
-        current: 0,
+        thermodynamic_temperature: 0,
+        electric_current: 0,
         amount_of_substance: 0,
         luminous_intensity: 1,
     };
@@ -110,8 +169,9 @@ impl Unit {
             length: self.length + rhs.length,
             mass: self.mass + rhs.mass,
             time: self.time + rhs.time,
-            temperature: self.temperature + rhs.temperature,
-            current: self.current + rhs.current,
+            thermodynamic_temperature: self.thermodynamic_temperature
+                + rhs.thermodynamic_temperature,
+            electric_current: self.electric_current + rhs.electric_current,
             amount_of_substance: self.amount_of_substance + rhs.amount_of_substance,
             luminous_intensity: self.luminous_intensity + rhs.luminous_intensity,
         }
@@ -122,8 +182,9 @@ impl Unit {
             length: self.length - rhs.length,
             mass: self.mass - rhs.mass,
             time: self.time - rhs.time,
-            temperature: self.temperature - rhs.temperature,
-            current: self.current - rhs.current,
+            thermodynamic_temperature: self.thermodynamic_temperature
+                - rhs.thermodynamic_temperature,
+            electric_current: self.electric_current - rhs.electric_current,
             amount_of_substance: self.amount_of_substance - rhs.amount_of_substance,
             luminous_intensity: self.luminous_intensity - rhs.luminous_intensity,
         }
@@ -134,8 +195,8 @@ impl Unit {
             length: self.length * exp,
             mass: self.mass * exp,
             time: self.time * exp,
-            temperature: self.temperature * exp,
-            current: self.current * exp,
+            thermodynamic_temperature: self.thermodynamic_temperature * exp,
+            electric_current: self.electric_current * exp,
             amount_of_substance: self.amount_of_substance * exp,
             luminous_intensity: self.luminous_intensity * exp,
         }
@@ -146,8 +207,8 @@ impl Unit {
             self.length,
             self.mass,
             self.time,
-            self.temperature,
-            self.current,
+            self.thermodynamic_temperature,
+            self.electric_current,
             self.amount_of_substance,
             self.luminous_intensity,
         ]
@@ -161,8 +222,8 @@ impl Unit {
             length: self.length / exp,
             mass: self.mass / exp,
             time: self.time / exp,
-            temperature: self.temperature / exp,
-            current: self.current / exp,
+            thermodynamic_temperature: self.thermodynamic_temperature / exp,
+            electric_current: self.electric_current / exp,
             amount_of_substance: self.amount_of_substance / exp,
             luminous_intensity: self.luminous_intensity / exp,
         })
@@ -173,8 +234,8 @@ impl Unit {
             length: -self.length,
             mass: -self.mass,
             time: -self.time,
-            temperature: -self.temperature,
-            current: -self.current,
+            thermodynamic_temperature: -self.thermodynamic_temperature,
+            electric_current: -self.electric_current,
             amount_of_substance: -self.amount_of_substance,
             luminous_intensity: -self.luminous_intensity,
         }
@@ -187,8 +248,8 @@ impl Unit {
             ("T", self.time),
             ("L", self.length),
             ("M", self.mass),
-            ("I", self.current),
-            ("Θ", self.temperature),
+            ("I", self.electric_current),
+            ("Θ", self.thermodynamic_temperature),
             ("N", self.amount_of_substance),
             ("J", self.luminous_intensity),
         ];
@@ -243,8 +304,8 @@ impl Display for Unit {
             ("s", self.time),
             ("m", self.length),
             ("kg", self.mass),
-            ("A", self.current),
-            ("K", self.temperature),
+            ("A", self.electric_current),
+            ("K", self.thermodynamic_temperature),
             ("mol", self.amount_of_substance),
             ("cd", self.luminous_intensity),
         ];

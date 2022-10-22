@@ -1,9 +1,11 @@
+use std::fmt::Debug;
+
 use crate::{unit::UnitError, units, Collider, Float, Scalar, Transform, Vector};
 
 #[cfg(feature = "simulation")]
 use ggez::graphics::Color;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Object<const N: usize> {
     velocity: [Vector<N>; 4],
     intrinsic: IntrinsicProperty<N>,
@@ -366,5 +368,23 @@ impl Default for ObjectAttributes {
             is_static: false,
             restitution_coefficient: 1.0,
         }
+    }
+}
+
+impl<const N: usize> Debug for Object<N> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Object {{ ")?;
+        #[cfg(feature = "simulation")]
+        write!(f, "color: {:?} ", self.color())?;
+        write!(
+            f,
+            "position: {:?}, velocity: {:?}, mass: {:?}, charge: {:?}, collider: {:?}, attributes: {:?} }}",
+            self.position(),
+            self.velocity(),
+            self.mass(),
+            self.charge(),
+            self.collider(),
+            self.attributes(),
+        )
     }
 }

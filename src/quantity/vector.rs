@@ -211,15 +211,14 @@ impl<const T: usize> Default for Vector<T> {
 
 impl<const T: usize> Debug for Vector<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{} {}",
-            self.0
-                .iter()
-                .fold(String::new(), |acc, &x| acc + &format!("{:.2?} ", x))
-                .trim(),
-            self.1,
-        )
+        let mut iter = self.0.iter();
+        if let Some(dim) = iter.next() {
+            write!(f, "({}", dim)?;
+        }
+        for dim in iter {
+            write!(f, ", {}", dim)?;
+        }
+        write!(f, ") {}", self.1,)
     }
 }
 

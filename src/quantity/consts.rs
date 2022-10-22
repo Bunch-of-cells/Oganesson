@@ -396,6 +396,9 @@ pub mod constants {
 
     /// Einstein gravitational constant
     pub const EinsteinGravitationalConstant: Scalar = κ;
+
+    /// luminous efficacy of 540 THz monochromatic radiation
+    pub const K_cd: Scalar = Scalar(683.0, lm.div(W));
 }
 
 use crate::Vector;

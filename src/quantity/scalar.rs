@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    unit::{Unit, UnitError},
+    unit::{SIPrefix, Unit, UnitError},
     units::Null,
     Float,
 };
@@ -86,7 +86,7 @@ impl Default for Scalar {
 
 impl Debug for Scalar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:.2?} {}", self.0, self.1,)
+        write!(f, "{:.2?} {}", self.0, self.1)
     }
 }
 
@@ -236,6 +236,20 @@ impl Div<Unit> for Scalar {
     type Output = Scalar;
     fn div(self, rhs: Unit) -> Self::Output {
         Scalar(self.0, self.1 / rhs)
+    }
+}
+
+impl Mul<SIPrefix> for Scalar {
+    type Output = Scalar;
+    fn mul(self, rhs: SIPrefix) -> Self::Output {
+        self * Float::powi(10.0, rhs as _)
+    }
+}
+
+impl Mul<Scalar> for SIPrefix {
+    type Output = Scalar;
+    fn mul(self, rhs: Scalar) -> Self::Output {
+        rhs * Float::powi(10.0, self as _)
     }
 }
 

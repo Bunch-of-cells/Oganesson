@@ -144,6 +144,8 @@ impl<const N: usize> Universe<N> {
             let j = -(1.0 + e) * (u_a - u_b).dot(&n) / (m_a.recip() + m_b.recip());
             let n_j = j * n;
 
+            println!("COLLISION: {:?} :: {:?} :: {:?}", a, b, n_j);
+
             match (a.attributes().is_static, b.attributes().is_static) {
                 (true, true) => (),
                 (false, false) => {
