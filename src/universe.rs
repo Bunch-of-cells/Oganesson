@@ -139,28 +139,27 @@ impl<const N: usize> Universe<N> {
                 .attributes()
                 .restitution_coefficient
                 .max(b.attributes().restitution_coefficient);
+
             let n = normal.normalized();
+            let j = -(1.0 + e) * (u_a - u_b).dot(&n) / (m_a.recip() + m_b.recip()) * n;
 
-            let j = -(1.0 + e) * (u_a - u_b).dot(&n) / (m_a.recip() + m_b.recip());
-            let n_j = j * n;
-
-            println!("COLLISION: {:?} :: {:?} :: {:?}", a, b, n_j);
+            println!("COLLISION: {:?} :: {:?} :: {:?}", a, b, j);
 
             match (a.attributes().is_static, b.attributes().is_static) {
                 (true, true) => (),
                 (false, false) => {
-                    let v_a = u_a + n_j / m_a;
-                    let v_b = u_b - n_j / m_b;
+                    let v_a = u_a + j / m_a;
+                    let v_b = u_b - j / m_b;
 
                     self.objects[obj_a].set_velocity(v_a);
                     self.objects[obj_b].set_velocity(v_b);
                 }
                 (false, true) => {
-                    let v_a = u_a + n_j / m_a;
+                    let v_a = u_a + j / m_a;
                     self.objects[obj_a].set_velocity(v_a);
                 }
                 (true, false) => {
-                    let v_b = u_b - n_j / m_b;
+                    let v_b = u_b - j / m_b;
                     self.objects[obj_b].set_velocity(v_b);
                 }
             }

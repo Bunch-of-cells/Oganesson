@@ -1,4 +1,5 @@
 #![allow(confusable_idents)]
+#![allow(uncommon_codepoints)]
 
 pub mod collision;
 pub mod object;

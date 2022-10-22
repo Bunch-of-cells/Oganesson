@@ -51,7 +51,7 @@ impl Scalar {
 
     /// **This does not raise the units to the given power, use it at your own risk**
     pub fn powf(self, n: Float) -> Scalar {
-        Scalar(self.0.powf(n), self.1)
+        Scalar(self.0.powf(n.into()), self.1)
     }
 
     pub fn powi(self, n: i32) -> Scalar {

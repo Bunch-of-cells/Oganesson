@@ -24,7 +24,7 @@ pub mod units {
     /// Mole
     pub const mol: Unit = Unit::N;
 
-    /// None
+    /// Unitless
     pub const Null: Unit = Unit::NONE;
 
     /// Hertz
@@ -74,9 +74,6 @@ pub mod units {
 
     /// Henry
     pub const H: Unit = Wb.div(A);
-
-    /// Degree Celsius
-    pub const Celsius: Unit = K;
 
     /// Lumen
     pub const lm: Unit = cd.mul(sr);
@@ -181,6 +178,8 @@ pub mod units {
 
 #[allow(clippy::excessive_precision)]
 pub mod constants {
+    use std::f32::consts::PI;
+
     use super::units::*;
     use crate::Scalar;
 
@@ -196,8 +195,11 @@ pub mod constants {
     /// Planck constant
     pub const h: Scalar = Scalar(6.62607015e-34, J.div(Hz));
 
-    /// reduced Planck constant
-    pub const h_bar: Scalar = Scalar(1.054571817e-34, J.mul(s));
+    /// Reduced Planck constant / Dirac Constant
+    pub const ℏ: Scalar = Scalar(1.054571817e-34, J.mul(s));
+
+    /// Reduced Planck constant / Dirac Constant
+    pub const DiracConstant: Scalar = ℏ;
 
     /// Vacuum magnetic permeability
     pub const μ_0: Scalar = Scalar(1.25663706212e-6, N.div(A.pow(2)));
@@ -385,11 +387,11 @@ pub mod constants {
     /// Hyperfine transition frequency of 133Cs
     pub const TransitionFrequency133Cs: Scalar = ΔνCs;
 
-    /// Cosmological sonstant
-    pub const Λ: Scalar = Scalar(2.036e-35, s.pow(-2));
+    /// Omega sub Lambda
+    pub const Ω_Λ: Scalar = Scalar(0.6889, Null);
 
-    /// Cosmological sonstant
-    pub const CosmologicalConstant: Scalar = Λ;
+    /// Omega sub Lambda
+    pub const OmegaSubLambda: Scalar = Ω_Λ;
 
     /// Einstein gravitational constant
     pub const κ: Scalar = Scalar(2.076579e-43, N.recip());
@@ -397,8 +399,83 @@ pub mod constants {
     /// Einstein gravitational constant
     pub const EinsteinGravitationalConstant: Scalar = κ;
 
-    /// luminous efficacy of 540 THz monochromatic radiation
+    /// Luminous efficacy of 540 THz monochromatic radiation
     pub const K_cd: Scalar = Scalar(683.0, lm.div(W));
+
+    /// Degree Celsius
+    pub const Celsius: Scalar = Scalar(273.15, K);
+
+    /// Minute
+    pub const min: Scalar = Scalar(60.0, s);
+
+    /// Hour
+    pub const hr: Scalar = Scalar(3600.0, s);
+
+    /// Day
+    pub const d: Scalar = Scalar(86400.0, s);
+
+    /// Astronomical Unit
+    pub const au: Scalar = Scalar(149597870700.0, m);
+
+    /// Degree
+    pub const deg: Scalar = Scalar(PI / 180.0, rad);
+
+    /// Arcminute
+    pub const arcmin: Scalar = Scalar(PI / 10800.0, rad);
+
+    /// Arcsecond
+    pub const arcsec: Scalar = Scalar(PI / 648000.0, rad);
+
+    /// Hectare
+    pub const ha: Scalar = Scalar(10000.0, m.pow(2));
+
+    /// Litre
+    pub const L: Scalar = Scalar(0.001, m.pow(3));
+
+    /// Tonne
+    pub const t: Scalar = Scalar(1000.0, kg);
+
+    /// Dalton
+    pub const Da: Scalar = Scalar(1.66053906660e-27, kg);
+
+    /// Electron Volt
+    pub const eV: Scalar = Scalar(1.602176634e-19, J);
+
+    /// Galileo
+    pub const gal: Scalar = Scalar(0.01, m.div(s.pow(2)));
+
+    /// Unified Atomic Mass Unit
+    pub const u: Scalar = Da;
+
+    /// Volt-Ampere Reactive
+    pub const var: Scalar = Scalar(1.0, V.mul(A));
+
+    /// Parsec
+    pub const pc: Scalar = Scalar(3.0856775814913673e16, m);
+
+    /// Bar
+    pub const bar: Scalar = Scalar(100000.0, Pa);
+
+    /// Standard Atmosphere
+    pub const atm: Scalar = Scalar(101325.0, Pa);
+
+    /// ångström
+    pub const Å: Scalar = Scalar(1e-10, m);
+
+    /// ångström
+    pub const Angstrom: Scalar = Å;
+
+    /// Planck length
+    pub const l_P: Scalar = Scalar(1.616255e-35, m);
+
+    /// Planck time
+    pub const t_P: Scalar = Scalar(5.391247e-44, s);
+
+    /// Planck mass
+    pub const m_P: Scalar = Scalar(2.176434e-8, kg);
+
+    /// Planck temperature
+    pub const T_P: Scalar = Scalar(1.416784e32, K);
 }
 
 use crate::Vector;
