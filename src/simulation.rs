@@ -4,7 +4,7 @@ use ggez::graphics::{Canvas, Color, DrawMode, DrawParam, Mesh, MeshBuilder};
 use ggez::winit::event::VirtualKeyCode;
 use ggez::{event::EventHandler, Context, GameResult};
 
-use crate::Collider;
+use crate::{units, Collider, Vector};
 
 #[derive(Default)]
 pub struct Universe {
@@ -38,7 +38,7 @@ impl EventHandler for Universe {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         self.paused = ctx.keyboard.is_key_pressed(VirtualKeyCode::Space);
         if !self.paused {
-            self.universe.step(ctx.time.delta().as_secs_f32());
+            // self.universe.step(ctx.time.delta().as_secs_f32());
         }
         Ok(())
     }
@@ -51,6 +51,25 @@ impl EventHandler for Universe {
         let mut canvas = Canvas::from_frame(ctx, Color::BLACK);
 
         let mb = &mut MeshBuilder::new();
+
+        let (w, h) = ctx.gfx.size();
+
+        let field = self.universe.electric_field();
+        let grad = field.gradient();
+
+        for i in (0..w as u32).step_by(30) {
+            for j in (0..h as u32).step_by(30) {
+                let g = grad
+                    .at(Vector([i as f32, j as f32], units::m))
+                    .unwrap();
+
+                let p = g / 10.0
+                    + Vector([i as f32, j as f32], g.unit());
+
+                mb.line(&[[i as f32, j as f32].into(), p], 1.0, Color::WHITE)?;
+                mb.circle(DrawMode::fill(), p, 5.0, 1.0, Color::WHITE)?;
+            }
+        }
 
         for object in self.objects() {
             // println!("{:?}", object);
