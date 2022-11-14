@@ -1,6 +1,8 @@
 use std::fmt::Debug;
 
-use crate::{unit::UnitError, units, Collider, Float, Scalar, Transform, Vector};
+use crate::{
+    field::ScalarField, unit::UnitError, units, Collider, Float, Scalar, Transform, Vector,
+};
 
 #[cfg(feature = "simulation")]
 use ggez::graphics::Color;
@@ -10,7 +12,6 @@ pub struct Object<const N: usize> {
     velocity: [Vector<N>; 4],
     intrinsic: IntrinsicProperty<N>,
     transform: [Transform<N>; 2],
-    force: Vector<N>,
 }
 
 impl<const N: usize> Object<N> {
@@ -67,13 +68,11 @@ impl<const N: usize> Object<N> {
             velocity: [velocity; 4],
             transform: [Transform::new(position), Transform::new(position)],
             intrinsic,
-            force: Vector::zero() * units::N,
         })
     }
 
-    pub(crate) fn update(&mut self, dt: Scalar) {
-        let acceleration = self.acceleration();
-        self.force = Vector::zero() * units::N;
+    pub(crate) fn update(&mut self, dt: Scalar, fields: &ScalarField<'_, N>) {
+        let acceleration = self.acceleration(fields);
         let velocity = acceleration * dt
             + (self.velocity[0]
                 + 3.0 * self.velocity[1]
@@ -84,12 +83,6 @@ impl<const N: usize> Object<N> {
         self.transform[1].position += velocity * dt;
         self.velocity.rotate_left(1);
         self.velocity[3] = velocity;
-    }
-
-    pub fn apply_force(&mut self, force: Vector<N>) -> Result<(), UnitError> {
-        force.get_uniterror(units::N, "force")?;
-        self.force += force;
-        Ok(())
     }
 
     pub(crate) fn set_velocity(&mut self, velocity: Vector<N>) {
@@ -132,8 +125,18 @@ impl<const N: usize> Object<N> {
 
     #[cfg(not(feature = "relativistic"))]
     #[inline(always)]
-    pub fn acceleration(&mut self) -> Vector<N> {
-        self.force / self.mass()
+    pub fn acceleration(&mut self, fields: &ScalarField<'_, N>) -> Vector<N> {
+        let force = -fields.gradient().at(self.position()).unwrap();
+        dbg!(force);
+        force / self.mass()
+    }
+
+    #[cfg(feature = "relativistic")]
+    #[inline(always)]
+    pub fn acceleration(&mut self, fields: &ScalarField<'_, N>) -> Vector<N> {
+        let force = -fields.gradient().at(self.position());
+        self.inv_lorentz_factor() / self.mass()
+            * (force - force.dot(&self.velocity()) * self.velocity() / crate::constants::c2)
     }
 
     #[inline(always)]
@@ -144,6 +147,18 @@ impl<const N: usize> Object<N> {
     #[cfg(not(feature = "relativistic"))]
     #[inline(always)]
     pub fn mass(&self) -> Scalar {
+        self.intrinsic.mass
+    }
+
+    #[cfg(feature = "relativistic")]
+    #[inline(always)]
+    pub fn mass(&self) -> Scalar {
+        self.intrinsic.mass * self.lorentz_factor()
+    }
+
+    #[cfg(feature = "relativistic")]
+    #[inline(always)]
+    pub fn rest_mass(&self) -> Scalar {
         self.intrinsic.mass
     }
 
@@ -183,11 +198,25 @@ impl<const N: usize> Object<N> {
         self.intrinsic.mass * self.velocity[3].squared() * 0.5
     }
 
+    #[cfg(feature = "relativistic")]
+    #[inline(always)]
+    /// KE = E - mc2
+    pub fn kinetic_energy(&self) -> Scalar {
+        self.intrinsic.mass * crate::constants::c2 * (self.lorentz_factor() - 1.0)
+    }
+
     #[cfg(not(feature = "relativistic"))]
     #[inline(always)]
     /// p = mv
     pub fn momentum(&self) -> Vector<N> {
         self.intrinsic.mass * self.velocity[3]
+    }
+
+    #[cfg(feature = "relativistic")]
+    #[inline(always)]
+    /// p = γmv
+    pub fn momentum(&self) -> Vector<N> {
+        self.intrinsic.mass * self.velocity[3] * self.lorentz_factor()
     }
 
     #[cfg(feature = "relativistic")]
@@ -214,43 +243,9 @@ impl<const N: usize> Object<N> {
 
     #[cfg(feature = "relativistic")]
     #[inline(always)]
-    /// KE = E - mc2
-    pub fn kinetic_energy(&self) -> Scalar {
-        self.intrinsic.mass * crate::constants::c2 * (self.lorentz_factor() - 1.0)
-    }
-
-    #[cfg(feature = "relativistic")]
-    #[inline(always)]
     /// E = γmc2
     pub fn energy(&self) -> Scalar {
         self.intrinsic.mass * crate::constants::c2 * self.lorentz_factor()
-    }
-
-    #[cfg(feature = "relativistic")]
-    #[inline(always)]
-    pub fn mass(&self) -> Scalar {
-        self.intrinsic.mass * self.lorentz_factor()
-    }
-
-    #[cfg(feature = "relativistic")]
-    #[inline(always)]
-    /// p = γmv
-    pub fn momentum(&self) -> Vector<N> {
-        self.intrinsic.mass * self.velocity[3] * self.lorentz_factor()
-    }
-
-    #[cfg(feature = "relativistic")]
-    #[inline(always)]
-    pub fn rest_mass(&self) -> Scalar {
-        self.intrinsic.mass
-    }
-
-    #[cfg(feature = "relativistic")]
-    #[inline(always)]
-    pub fn acceleration(&mut self) -> Vector<N> {
-        self.inv_lorentz_factor() / self.mass()
-            * (self.force
-                - self.force.dot(&self.velocity()) * self.velocity() / crate::constants::c2)
     }
 
     #[cfg(feature = "simulation")]
@@ -373,18 +368,18 @@ impl Default for ObjectAttributes {
 
 impl<const N: usize> Debug for Object<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Object {{ ")?;
+        let mut s = f.debug_struct("Object");
+
+        s.field("position", &self.position())
+            .field("velocity", &self.velocity())
+            .field("mass", &self.mass())
+            .field("charge", &self.charge())
+            .field("collider", &self.collider())
+            .field("attrs", &self.attributes());
+
         #[cfg(feature = "simulation")]
-        write!(f, "color: {:?} ", self.color())?;
-        write!(
-            f,
-            "position: {:?}, velocity: {:?}, mass: {:?}, charge: {:?}, collider: {:?}, attributes: {:?} }}",
-            self.position(),
-            self.velocity(),
-            self.mass(),
-            self.charge(),
-            self.collider(),
-            self.attributes(),
-        )
+        s.field("color", &self.color());
+
+        s.finish()
     }
 }

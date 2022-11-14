@@ -1,6 +1,7 @@
 use crate::{
     collision::{possible_collisions, Collision},
     constants,
+    field::ScalarField,
     scalar::Scalar,
     units, Float, Object, Vector,
 };
@@ -39,64 +40,70 @@ impl<const N: usize> Universe<N> {
 
     pub fn step(&mut self, dt: Float) {
         let dt = dt * units::s;
+
+        let electric = self.electric_field();
+        // let gravity = self.gravitational_field();
+
         let collisions = self.find_collisions();
-        let electric_field = self.electric_field();
-        let gravitational_field = self.gravitational_field();
         self.resolve_collisions(&collisions, dt);
+
         for object in self.objects.iter_mut() {
-            object
-                .apply_force(
-                    electric_field(object.position()) * object.charge()
-                        + gravitational_field(object.position()) * object.mass(),
-                )
-                .unwrap();
-            object.update(dt);
+            let fields = electric.clone() * object.charge();
+            object.update(dt, &fields);
         }
     }
 
-    pub fn electric_field(&mut self) -> impl Fn(Vector<N>) -> Vector<N> {
+    pub fn electric_field(&self) -> ScalarField<'static, N> {
         let charge_pos = self
             .objects
             .iter()
             .map(|object| (object.charge(), object.position()))
             .collect::<Vec<_>>();
-        move |x| {
-            constants::k_e
-                * charge_pos.iter().fold(
-                    Vector::zero() * units::of_electric_field_strength / constants::k_e.unit(),
-                    |acc, &(charge, pos)| {
-                        let diff = x - pos;
-                        if diff.is_zero() {
-                            acc
-                        } else {
-                            acc + charge / diff.magnitude().squared() * diff.normalized()
-                        }
-                    },
-                )
-        }
+        (
+            move |x| {
+                constants::k_e
+                    * charge_pos.iter().fold(
+                        Scalar::zero() * units::J / units::C / constants::k_e.unit(),
+                        |potential, &(charge, pos)| {
+                            let diff: Vector<N> = x - pos;
+                            if diff.is_zero() {
+                                potential
+                            } else {
+                                potential + charge / diff.magnitude()
+                            }
+                        },
+                    )
+            },
+            units::J / units::C,
+        )
+            .into()
     }
 
     /// Classical Newtonian Gravitation
-    pub fn gravitational_field(&mut self) -> impl Fn(Vector<N>) -> Vector<N> {
+    pub fn gravitational_field(&self) -> ScalarField<'static, N> {
         let mass_pos = self
             .objects
             .iter()
             .map(|object| (object.mass(), object.position()))
             .collect::<Vec<_>>();
-        move |x| {
-            constants::G
-                * mass_pos.iter().fold(
-                    Vector::zero() * units::kg / units::m.pow(2),
-                    |acc, &(mass, pos)| {
-                        let diff = x - pos;
-                        if diff.is_zero() {
-                            acc
-                        } else {
-                            acc - mass / diff.magnitude().squared() * diff.normalized()
-                        }
-                    },
-                )
-        }
+        (
+            move |x| {
+                constants::G
+                    * mass_pos.iter().fold(
+                        Scalar::zero() * units::J / units::kg / constants::G.unit(),
+                        |potential, &(mass, pos)| {
+                            let diff: Vector<N> = x - pos;
+                            if diff.is_zero() {
+                                potential
+                            } else {
+                                potential - mass / diff.magnitude()
+                            }
+                        },
+                    )
+            },
+            units::J / units::kg,
+        )
+            .into()
     }
 
     fn find_collisions(&self) -> Vec<Collision<N>> {

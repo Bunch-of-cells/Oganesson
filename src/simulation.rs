@@ -1,8 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use ggez::graphics::{self, Color, DrawMode, Mesh};
-use ggez::input::keyboard::is_key_pressed;
-use ggez::timer::delta;
+use ggez::graphics::{Canvas, Color, DrawMode, DrawParam, Mesh, MeshBuilder};
 use ggez::winit::event::VirtualKeyCode;
 use ggez::{event::EventHandler, Context, GameResult};
 
@@ -38,9 +36,9 @@ impl DerefMut for Universe {
 
 impl EventHandler for Universe {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        self.paused = is_key_pressed(ctx, VirtualKeyCode::Space);
+        self.paused = ctx.keyboard.is_key_pressed(VirtualKeyCode::Space);
         if !self.paused {
-            self.universe.step(delta(ctx).as_secs_f32());
+            self.universe.step(ctx.time.delta().as_secs_f32());
         }
         Ok(())
     }
@@ -49,25 +47,26 @@ impl EventHandler for Universe {
         if self.paused {
             return Ok(());
         }
-        graphics::clear(ctx, Color::BLACK);
+
+        let mut canvas = Canvas::from_frame(ctx, Color::BLACK);
+
+        let mb = &mut MeshBuilder::new();
 
         for object in self.objects() {
             // println!("{:?}", object);
             let color = object.color();
-            let mesh = match object.collider() {
+            match object.collider() {
                 &Collider::Sphere { radius } => {
-                    Mesh::new_circle(ctx, DrawMode::fill(), [0.0, 0.0], *radius, 0.1, color)?
+                    mb.circle(DrawMode::fill(), object.position(), *radius, 0.1, color)?
                 }
-                &Collider::Triangle { a, b, c } => Mesh::from_triangles(ctx, &[a, b, c], color)?,
+                &Collider::Triangle { a, b, c } => mb.triangles(&[a, b, c], color)?,
                 Collider::Plane { .. } => todo!(),
-                Collider::Polygon { points } => {
-                    Mesh::new_polygon(ctx, DrawMode::fill(), points, color)?
-                }
+                Collider::Polygon { points } => mb.polygon(DrawMode::fill(), points, color)?,
             };
-            graphics::draw(ctx, &mesh, (object.position(),))?;
         }
 
-        graphics::present(ctx)?;
-        Ok(())
+        let mesh = Mesh::from_data(ctx, mb.build());
+        canvas.draw(&mesh, DrawParam::new());
+        canvas.finish(ctx)
     }
 }

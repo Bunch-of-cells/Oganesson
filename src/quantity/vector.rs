@@ -96,7 +96,7 @@ impl<const N: usize> Vector<N> {
     }
 
     #[track_caller]
-    pub const fn unit_vector(direction: usize) -> Vector<N> {
+    pub const fn basis(direction: usize) -> Vector<N> {
         if direction > N {
             panic!("Vector::unit_vector: direction out of bounds");
         }
@@ -116,6 +116,14 @@ impl<const N: usize> Vector<N> {
 
     pub fn angle_to(&self, other: &Vector<N>) -> Float {
         (self.dot(other) / (self.magnitude() * other.magnitude())).acos()
+    }
+
+    #[track_caller]
+    pub fn basis_const<const M: usize>() -> Vector<N> {
+        assert!(M < N);
+        let mut v = [0.0; N];
+        v[M] = 1.0;
+        Vector(v, Null)
     }
 }
 
@@ -225,6 +233,12 @@ impl<const T: usize> Debug for Vector<T> {
 impl<const T: usize> From<[Float; T]> for Vector<T> {
     fn from(a: [Float; T]) -> Self {
         Vector(a, Null)
+    }
+}
+
+impl<const T: usize> From<[Scalar; T]> for Vector<T> {
+    fn from(a: [Scalar; T]) -> Self {
+        Vector(a.map(|s| s.0), a.first().map(|s| s.1).unwrap_or_default())
     }
 }
 

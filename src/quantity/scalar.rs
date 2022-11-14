@@ -51,7 +51,7 @@ impl Scalar {
 
     /// **This does not raise the units to the given power, use it at your own risk**
     pub fn powf(self, n: Float) -> Scalar {
-        Scalar(self.0.powf(n.into()), self.1)
+        Scalar(self.0.powf(n), self.1)
     }
 
     pub fn powi(self, n: i32) -> Scalar {
@@ -98,14 +98,16 @@ impl From<Float> for Scalar {
 
 impl Add for Scalar {
     type Output = Scalar;
+
     #[track_caller]
     fn add(self, other: Scalar) -> Scalar {
-        self.checked_add(other).unwrap_or_else(|| {
-            panic!(
+        match self.checked_add(other) {
+            Some(a) => a,
+            None => panic!(
                 "Cannot add scalars with different units: {} and {}",
                 self.1, other.1
-            )
-        })
+            ),
+        }
     }
 }
 
@@ -140,12 +142,13 @@ impl Sub for Scalar {
     type Output = Scalar;
     #[track_caller]
     fn sub(self, other: Scalar) -> Scalar {
-        self.checked_add(other).unwrap_or_else(|| {
-            panic!(
+        match self.checked_sub(other) {
+            Some(a) => a,
+            None => panic!(
                 "Cannot subtract scalars with different units: {} and {}",
                 self.1, other.1
-            )
-        })
+            ),
+        }
     }
 }
 
