@@ -402,9 +402,6 @@ pub mod constants {
     /// Luminous efficacy of 540 THz monochromatic radiation
     pub const K_cd: Scalar = Scalar(683.0, lm.div(W));
 
-    /// Degree Celsius
-    pub const Celsius: Scalar = Scalar(273.15, K);
-
     /// Minute
     pub const min: Scalar = Scalar(60.0, s);
 
