@@ -98,7 +98,9 @@ impl<const N: usize> Object<N> {
                 if distance >= r1 + r2 {
                     None
                 } else {
-                    Some(direction * (r1 + r2 - distance))
+                    let mut normal = direction * (r1 + r2 - distance);
+                    normal.1 = units::Null;
+                    Some(normal)
                 }
             }
 

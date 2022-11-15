@@ -21,6 +21,10 @@ impl Scalar {
         Scalar(0.0, Null)
     }
 
+    pub fn is_zero(&self) -> bool {
+        self.0.abs() <= Float::EPSILON
+    }
+
     pub fn checked_add(self, other: Scalar) -> Option<Scalar> {
         if self.1 != other.1 {
             None

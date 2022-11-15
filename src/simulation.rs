@@ -4,6 +4,7 @@ use ggez::graphics::{Canvas, Color, DrawMode, DrawParam, Mesh, MeshBuilder};
 use ggez::winit::event::VirtualKeyCode;
 use ggez::{event::EventHandler, Context, GameResult};
 
+use crate::field::VectorField;
 use crate::{units, Collider, Vector};
 
 #[derive(Default)]
@@ -18,6 +19,68 @@ impl Universe {
             universe: crate::Universe::new(),
             paused: false,
         }
+    }
+
+    fn draw_bodies(&self, mb: &mut MeshBuilder) -> GameResult {
+        let field = self.universe.electric_field();
+        let field = -field.gradient();
+        for object in self.objects() {
+            // println!("{:?}", object);
+            let color = object.color();
+            match object.collider() {
+                &Collider::Sphere { radius } => {
+                    mb.circle(DrawMode::fill(), object.position(), *radius, 0.1, color)?;
+                    self.draw_field_arrow(
+                        mb,
+                        &field,
+                        object.position().0[0],
+                        object.position().0[1],
+                        Color::YELLOW,
+                        20.0
+                    )?;
+                }
+                &Collider::Triangle { a, b, c } => {mb.triangles(&[a, b, c], color)?;},
+                Collider::Plane { .. } => todo!(),
+                Collider::Polygon { points } => {mb.polygon(DrawMode::fill(), points, color)?;},
+            };
+        }
+        Ok(())
+    }
+
+    fn draw_field(&self, mb: &mut MeshBuilder, ctx: &mut Context) -> GameResult {
+        let (w, h) = ctx.gfx.size();
+
+        let field = self.universe.electric_field();
+        let grad = -field.gradient();
+
+        for i in (0..w as u32).step_by(50) {
+            for j in (0..h as u32).step_by(50) {
+                self.draw_field_arrow(mb, &grad, i as f32, j as f32, Color::WHITE, 200000.0)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn draw_field_arrow(
+        &self,
+        mb: &mut MeshBuilder,
+        field: &VectorField<'_, 2>,
+        x: f32,
+        y: f32,
+        color: Color,
+        factor: f32,
+    ) -> GameResult {
+        let g = field.at(Vector([x, y], units::m)).unwrap();
+
+        let p = if g.magnitude().is_zero() {
+            Vector([x, y], g.unit())
+        } else {
+            g.normalized() * (g.magnitude() / factor).atan() * 25.0 + Vector([x, y], g.unit())
+        };
+
+        mb.line(&[[x, y].into(), p], 1.0, color)?;
+        mb.circle(DrawMode::fill(), p, 5.0, 1.0, color)?;
+        Ok(())
     }
 }
 
@@ -36,9 +99,9 @@ impl DerefMut for Universe {
 
 impl EventHandler for Universe {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        self.paused = ctx.keyboard.is_key_pressed(VirtualKeyCode::Space);
+        self.paused = !ctx.keyboard.is_key_pressed(VirtualKeyCode::Space);
         if !self.paused {
-            // self.universe.step(ctx.time.delta().as_secs_f32());
+            self.universe.step(ctx.time.delta().as_secs_f32());
         }
         Ok(())
     }
@@ -51,38 +114,8 @@ impl EventHandler for Universe {
         let mut canvas = Canvas::from_frame(ctx, Color::BLACK);
 
         let mb = &mut MeshBuilder::new();
-
-        let (w, h) = ctx.gfx.size();
-
-        let field = self.universe.electric_field();
-        let grad = field.gradient();
-
-        for i in (0..w as u32).step_by(30) {
-            for j in (0..h as u32).step_by(30) {
-                let g = grad
-                    .at(Vector([i as f32, j as f32], units::m))
-                    .unwrap();
-
-                let p = g / 10.0
-                    + Vector([i as f32, j as f32], g.unit());
-
-                mb.line(&[[i as f32, j as f32].into(), p], 1.0, Color::WHITE)?;
-                mb.circle(DrawMode::fill(), p, 5.0, 1.0, Color::WHITE)?;
-            }
-        }
-
-        for object in self.objects() {
-            // println!("{:?}", object);
-            let color = object.color();
-            match object.collider() {
-                &Collider::Sphere { radius } => {
-                    mb.circle(DrawMode::fill(), object.position(), *radius, 0.1, color)?
-                }
-                &Collider::Triangle { a, b, c } => mb.triangles(&[a, b, c], color)?,
-                Collider::Plane { .. } => todo!(),
-                Collider::Polygon { points } => mb.polygon(DrawMode::fill(), points, color)?,
-            };
-        }
+        self.draw_field(mb, ctx)?;
+        self.draw_bodies(mb)?;
 
         let mesh = Mesh::from_data(ctx, mb.build());
         canvas.draw(&mesh, DrawParam::new());

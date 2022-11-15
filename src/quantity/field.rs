@@ -1,5 +1,5 @@
 use std::{
-    ops::{Add, Mul},
+    ops::{Add, Mul, Neg},
     rc::Rc,
 };
 
@@ -8,7 +8,7 @@ use crate::{
     units, Float, Scalar, Vector,
 };
 
-const STEP: Float = 1.0;
+const STEP: Float = 0.1;
 
 #[derive(Clone)]
 pub struct ScalarField<'a, const N: usize> {
@@ -81,6 +81,14 @@ impl<'a, const N: usize> Mul<Scalar> for ScalarField<'a, N> {
     fn mul(mut self, rhs: Scalar) -> Self::Output {
         self.field = Rc::new(move |x| (self.field)(x) * rhs);
         self.unit = self.unit * rhs.1;
+        self
+    }
+}
+
+impl<'a, const N: usize> Neg for ScalarField<'a, N> {
+    type Output = ScalarField<'a, N>;
+    fn neg(mut self) -> Self::Output {
+        self.field = Rc::new(move |x| -(self.field)(x));
         self
     }
 }
@@ -186,5 +194,13 @@ impl<'a, const N: usize> Mul<Vector<N>> for ScalarField<'a, N> {
             field: Rc::new(move |x| (self.field)(x) * rhs),
             unit: self.unit * rhs.1,
         }
+    }
+}
+
+impl<'a, const N: usize> Neg for VectorField<'a, N> {
+    type Output = VectorField<'a, N>;
+    fn neg(mut self) -> Self::Output {
+        self.field = Rc::new(move |x| -(self.field)(x));
+        self
     }
 }

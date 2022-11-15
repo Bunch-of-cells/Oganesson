@@ -113,11 +113,11 @@ impl<const N: usize> Universe<N> {
         for (a, b) in possible_collisions {
             let obj_a = &self.objects[a];
             let obj_b = &self.objects[b];
-            if let Some(normal) = obj_a.is_collision(obj_b) {
+            if let Some(n) = obj_a.is_collision(obj_b) {
                 collisions.push(Collision {
                     obj_a: a,
                     obj_b: b,
-                    normal,
+                    normal: n.normalized(),
                 });
             }
         }
@@ -128,7 +128,7 @@ impl<const N: usize> Universe<N> {
         for &Collision {
             obj_a,
             obj_b,
-            normal,
+            normal: n,
         } in collisions
         {
             let a = &self.objects[obj_a];
@@ -147,7 +147,6 @@ impl<const N: usize> Universe<N> {
                 .restitution_coefficient
                 .max(b.attributes().restitution_coefficient);
 
-            let n = normal.normalized();
             let j = -(1.0 + e) * (u_a - u_b).dot(&n) / (m_a.recip() + m_b.recip()) * n;
 
             println!("COLLISION: {:?} :: {:?} :: {:?}", a, b, j);
