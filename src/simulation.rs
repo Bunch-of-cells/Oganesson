@@ -22,26 +22,20 @@ impl Universe {
     }
 
     fn draw_bodies(&self, mb: &mut MeshBuilder) -> GameResult {
-        let field = self.universe.electric_field();
-        let field = -field.gradient();
         for object in self.objects() {
             // println!("{:?}", object);
             let color = object.color();
             match object.collider() {
                 &Collider::Sphere { radius } => {
                     mb.circle(DrawMode::fill(), object.position(), *radius, 0.1, color)?;
-                    self.draw_field_arrow(
-                        mb,
-                        &field,
-                        object.position().0[0],
-                        object.position().0[1],
-                        Color::YELLOW,
-                        20.0
-                    )?;
                 }
-                &Collider::Triangle { a, b, c } => {mb.triangles(&[a, b, c], color)?;},
+                &Collider::Triangle { a, b, c } => {
+                    mb.triangles(&[a, b, c], color)?;
+                }
                 Collider::Plane { .. } => todo!(),
-                Collider::Polygon { points } => {mb.polygon(DrawMode::fill(), points, color)?;},
+                Collider::Polygon { points } => {
+                    mb.polygon(DrawMode::fill(), points, color)?;
+                }
             };
         }
         Ok(())
@@ -51,11 +45,10 @@ impl Universe {
         let (w, h) = ctx.gfx.size();
 
         let field = self.universe.electric_field();
-        let grad = -field.gradient();
 
         for i in (0..w as u32).step_by(50) {
             for j in (0..h as u32).step_by(50) {
-                self.draw_field_arrow(mb, &grad, i as f32, j as f32, Color::WHITE, 200000.0)?;
+                self.draw_field_arrow(mb, &field, i as f32, j as f32, Color::WHITE, 5000.0)?;
             }
         }
         Ok(())
@@ -72,10 +65,10 @@ impl Universe {
     ) -> GameResult {
         let g = field.at(Vector([x, y], units::m)).unwrap();
 
-        let p = if g.magnitude().is_zero() {
+        let p = if g.magnitude().is_zero() || g.0.iter().any(|x| x.is_nan()) {
             Vector([x, y], g.unit())
         } else {
-            g.normalized() * (g.magnitude() / factor).atan() * 25.0 + Vector([x, y], g.unit())
+            g.normalized() * (g.magnitude() / factor).log2().atan() * 25.0 + Vector::from([x, y])
         };
 
         mb.line(&[[x, y].into(), p], 1.0, color)?;
@@ -107,10 +100,6 @@ impl EventHandler for Universe {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        if self.paused {
-            return Ok(());
-        }
-
         let mut canvas = Canvas::from_frame(ctx, Color::BLACK);
 
         let mb = &mut MeshBuilder::new();

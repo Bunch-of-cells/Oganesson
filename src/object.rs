@@ -1,8 +1,6 @@
 use std::fmt::Debug;
 
-use crate::{
-    field::ScalarField, unit::UnitError, units, Collider, Float, Scalar, Transform, Vector,
-};
+use crate::{unit::UnitError, units, Collider, Float, Scalar, Transform, Vector};
 
 #[cfg(feature = "simulation")]
 use ggez::graphics::Color;
@@ -71,9 +69,8 @@ impl<const N: usize> Object<N> {
         })
     }
 
-    pub(crate) fn update(&mut self, dt: Scalar, fields: &ScalarField<'_, N>) {
-        let acceleration = self.acceleration(fields);
-        let velocity = acceleration * dt
+    pub(crate) fn update(&mut self, dt: Scalar, force: Vector<N>) {
+        let velocity = self.acceleration(force) * dt
             + (self.velocity[0]
                 + 3.0 * self.velocity[1]
                 + 3.0 * self.velocity[2]
@@ -89,6 +86,10 @@ impl<const N: usize> Object<N> {
         self.velocity = [velocity; 4];
     }
 
+    pub(crate) fn set_position_prev(&mut self) {
+        self.transform.rotate_left(1)
+    }
+
     pub fn is_collision(&self, other: &Object<N>) -> Option<Vector<N>> {
         match (self.collider(), other.collider()) {
             (&Collider::Sphere { radius: r1 }, &Collider::Sphere { radius: r2 }) => {
@@ -98,9 +99,7 @@ impl<const N: usize> Object<N> {
                 if distance >= r1 + r2 {
                     None
                 } else {
-                    let mut normal = direction * (r1 + r2 - distance);
-                    normal.1 = units::Null;
-                    Some(normal)
+                    Some(direction * (r1 + r2 - distance))
                 }
             }
 
@@ -127,16 +126,13 @@ impl<const N: usize> Object<N> {
 
     #[cfg(not(feature = "relativistic"))]
     #[inline(always)]
-    pub fn acceleration(&mut self, fields: &ScalarField<'_, N>) -> Vector<N> {
-        let force = -fields.gradient().at(self.position()).unwrap();
-        dbg!(force);
+    pub fn acceleration(&mut self, force: Vector<N>) -> Vector<N> {
         force / self.mass()
     }
 
     #[cfg(feature = "relativistic")]
     #[inline(always)]
-    pub fn acceleration(&mut self, fields: &ScalarField<'_, N>) -> Vector<N> {
-        let force = -fields.gradient().at(self.position());
+    pub fn acceleration(&mut self, force: Vector<N>) -> Vector<N> {
         self.inv_lorentz_factor() / self.mass()
             * (force - force.dot(&self.velocity()) * self.velocity() / crate::constants::c2)
     }
@@ -193,32 +189,16 @@ impl<const N: usize> Object<N> {
         &self.intrinsic.attributes
     }
 
-    #[cfg(not(feature = "relativistic"))]
     #[inline(always)]
-    /// KE = 1/2 m v^2
+    /// KE = p^2 / 2m
     pub fn kinetic_energy(&self) -> Scalar {
-        self.intrinsic.mass * self.velocity[3].squared() * 0.5
+        self.momentum().squared() / (2.0 * self.mass())
     }
 
-    #[cfg(feature = "relativistic")]
-    #[inline(always)]
-    /// KE = E - mc2
-    pub fn kinetic_energy(&self) -> Scalar {
-        self.intrinsic.mass * crate::constants::c2 * (self.lorentz_factor() - 1.0)
-    }
-
-    #[cfg(not(feature = "relativistic"))]
     #[inline(always)]
     /// p = mv
     pub fn momentum(&self) -> Vector<N> {
-        self.intrinsic.mass * self.velocity[3]
-    }
-
-    #[cfg(feature = "relativistic")]
-    #[inline(always)]
-    /// p = γmv
-    pub fn momentum(&self) -> Vector<N> {
-        self.intrinsic.mass * self.velocity[3] * self.lorentz_factor()
+        self.mass() * self.velocity[3]
     }
 
     #[cfg(feature = "relativistic")]

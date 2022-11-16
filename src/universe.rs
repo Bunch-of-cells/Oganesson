@@ -1,7 +1,7 @@
 use crate::{
     collision::{possible_collisions, Collision},
     constants,
-    field::ScalarField,
+    field::VectorField,
     scalar::Scalar,
     units, Float, Object, Vector,
 };
@@ -40,68 +40,65 @@ impl<const N: usize> Universe<N> {
 
     pub fn step(&mut self, dt: Float) {
         let dt = dt * units::s;
+        self.resolve_collisions(dt);
 
         let electric = self.electric_field();
-        // let gravity = self.gravitational_field();
-
-        let collisions = self.find_collisions();
-        self.resolve_collisions(&collisions, dt);
 
         for object in self.objects.iter_mut() {
-            let fields = electric.clone() * object.charge();
-            object.update(dt, &fields);
+            let force = electric.at(object.position()).unwrap() * object.charge();
+            object.update(dt, force);
         }
     }
 
-    pub fn electric_field(&self) -> ScalarField<'static, N> {
+    pub fn electric_field(&self) -> VectorField<'static, N> {
         let charge_pos = self
             .objects
             .iter()
             .map(|object| (object.charge(), object.position()))
             .collect::<Vec<_>>();
         (
-            move |x| {
+            move |x: Vector<N>| {
                 constants::k_e
                     * charge_pos.iter().fold(
-                        Scalar::zero() * units::J / units::C / constants::k_e.unit(),
+                        Vector::zero() * units::N / units::C / constants::k_e.unit(),
                         |potential, &(charge, pos)| {
-                            let diff: Vector<N> = x - pos;
-                            if diff.is_zero() {
+                            let r = x - pos;
+                            if r.is_zero() {
                                 potential
                             } else {
-                                potential + charge / diff.magnitude()
+                                potential + charge / r.magnitude().squared() * r.normalized()
                             }
                         },
                     )
             },
-            units::J / units::C,
+            units::N / units::C,
         )
             .into()
     }
 
     /// Classical Newtonian Gravitation
-    pub fn gravitational_field(&self) -> ScalarField<'static, N> {
+    pub fn gravitational_field(&self) -> VectorField<'static, N> {
         let mass_pos = self
             .objects
             .iter()
             .map(|object| (object.mass(), object.position()))
             .collect::<Vec<_>>();
         (
-            move |x| {
+            move |x: Vector<N>| {
                 constants::G
                     * mass_pos.iter().fold(
-                        Scalar::zero() * units::J / units::kg / constants::G.unit(),
+                        Vector::zero() * units::N / units::kg / constants::G.unit(),
                         |potential, &(mass, pos)| {
-                            let diff: Vector<N> = x - pos;
-                            if diff.is_zero() {
+                            let r = x - pos;
+                            if r.is_zero() {
                                 potential
                             } else {
-                                potential - mass / diff.magnitude()
+                                potential + mass / r.magnitude().squared() * r.normalized()
                             }
                         },
                     )
             },
-            units::J / units::kg,
+            units::N / units::kg,
         )
             .into()
     }
@@ -113,23 +110,23 @@ impl<const N: usize> Universe<N> {
         for (a, b) in possible_collisions {
             let obj_a = &self.objects[a];
             let obj_b = &self.objects[b];
-            if let Some(n) = obj_a.is_collision(obj_b) {
+            if let Some(normal) = obj_a.is_collision(obj_b) {
                 collisions.push(Collision {
                     obj_a: a,
                     obj_b: b,
-                    normal: n.normalized(),
+                    normal,
                 });
             }
         }
         collisions
     }
 
-    fn resolve_collisions(&mut self, collisions: &[Collision<N>], _dt: Scalar) {
-        for &Collision {
+    fn resolve_collisions(&mut self, _dt: Scalar) {
+        for Collision {
             obj_a,
             obj_b,
-            normal: n,
-        } in collisions
+            normal,
+        } in self.find_collisions()
         {
             let a = &self.objects[obj_a];
             let b = &self.objects[obj_b];
@@ -147,18 +144,19 @@ impl<const N: usize> Universe<N> {
                 .restitution_coefficient
                 .max(b.attributes().restitution_coefficient);
 
+            let n = normal.normalized();
             let j = -(1.0 + e) * (u_a - u_b).dot(&n) / (m_a.recip() + m_b.recip()) * n;
-
-            println!("COLLISION: {:?} :: {:?} :: {:?}", a, b, j);
 
             match (a.attributes().is_static, b.attributes().is_static) {
                 (true, true) => (),
                 (false, false) => {
                     let v_a = u_a + j / m_a;
                     let v_b = u_b - j / m_b;
-
+                    dbg!(v_a, v_b);
                     self.objects[obj_a].set_velocity(v_a);
                     self.objects[obj_b].set_velocity(v_b);
+                    self.objects[obj_a].set_position_prev();
+                    self.objects[obj_b].set_position_prev();
                 }
                 (false, true) => {
                     let v_a = u_a + j / m_a;

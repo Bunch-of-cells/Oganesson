@@ -5,10 +5,8 @@ use std::{
 
 use crate::{
     unit::{Unit, UnitError},
-    units, Float, Scalar, Vector,
+    units, Scalar, Vector, STEP,
 };
-
-const STEP: Float = 0.1;
 
 #[derive(Clone)]
 pub struct ScalarField<'a, const N: usize> {
@@ -93,6 +91,7 @@ impl<'a, const N: usize> Neg for ScalarField<'a, N> {
     }
 }
 
+#[derive(Clone)]
 pub struct VectorField<'a, const N: usize> {
     field: Rc<dyn Fn(Vector<N>) -> Vector<N> + 'a>,
     unit: Unit,

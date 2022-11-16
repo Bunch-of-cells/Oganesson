@@ -22,8 +22,9 @@ impl<const N: usize> Vector<N> {
         )
     }
 
+    /// Returns a normalized unitless vector
     pub fn normalized(&self) -> Vector<N> {
-        let magnitude = self.magnitude().value();
+        let magnitude = self.magnitude();
         *self / magnitude
     }
 
