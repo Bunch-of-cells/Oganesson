@@ -393,8 +393,22 @@ impl From<Vector<2>> for Point2<Float> {
 }
 
 #[cfg(feature = "simulation")]
+impl From<Point2<Float>> for Vector<2> {
+    fn from(point: Point2<Float>) -> Self {
+        [point.x, point.y].into()
+    }
+}
+
+#[cfg(feature = "simulation")]
 impl From<Vector<3>> for Point3<Float> {
     fn from(vector: Vector<3>) -> Self {
         vector.0.into()
+    }
+}
+
+#[cfg(feature = "simulation")]
+impl From<Point3<Float>> for Vector<3> {
+    fn from(point: Point3<Float>) -> Self {
+        [point.x, point.y, point.z].into()
     }
 }

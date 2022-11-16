@@ -70,6 +70,9 @@ impl<const N: usize> Object<N> {
     }
 
     pub(crate) fn update(&mut self, dt: Scalar, force: Vector<N>) {
+        if self.intrinsic.attributes.is_static {
+            return;
+        }
         let velocity = self.acceleration(force) * dt
             + (self.velocity[0]
                 + 3.0 * self.velocity[1]

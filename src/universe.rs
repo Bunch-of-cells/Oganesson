@@ -161,10 +161,12 @@ impl<const N: usize> Universe<N> {
                 (false, true) => {
                     let v_a = u_a + j / m_a;
                     self.objects[obj_a].set_velocity(v_a);
+                    self.objects[obj_a].set_position_prev();
                 }
                 (true, false) => {
                     let v_b = u_b - j / m_b;
                     self.objects[obj_b].set_velocity(v_b);
+                    self.objects[obj_b].set_position_prev();
                 }
             }
         }

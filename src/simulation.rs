@@ -1,11 +1,15 @@
 use std::ops::{Deref, DerefMut};
 
-use ggez::graphics::{Canvas, Color, DrawMode, DrawParam, Mesh, MeshBuilder};
+use ggez::conf::{WindowMode, WindowSetup};
+use ggez::event::MouseButton;
+pub use ggez::graphics::Color;
+use ggez::graphics::{Canvas, DrawMode, DrawParam, Mesh, MeshBuilder};
 use ggez::winit::event::VirtualKeyCode;
+use ggez::{event, ContextBuilder};
 use ggez::{event::EventHandler, Context, GameResult};
 
 use crate::field::VectorField;
-use crate::{units, Collider, Vector};
+use crate::{units, Collider, Float, IntrinsicProperty, Object, Scalar, Vector};
 
 #[derive(Default)]
 pub struct Universe {
@@ -19,6 +23,19 @@ impl Universe {
             universe: crate::Universe::new(),
             paused: false,
         }
+    }
+
+    pub fn run(self) -> GameResult<()> {
+        let (ctx, event_loop) = ContextBuilder::new("oganesson", "Bunch-of-cells")
+            .window_setup(WindowSetup::default().title("Oganesson"))
+            .window_mode(WindowMode {
+                height: 800.0,
+                width: 1000.0,
+                ..Default::default()
+            })
+            .build()?;
+
+        event::run(ctx, event_loop, self)
     }
 
     fn draw_bodies(&self, mb: &mut MeshBuilder) -> GameResult {
@@ -96,6 +113,38 @@ impl EventHandler for Universe {
         if !self.paused {
             self.universe.step(ctx.time.delta().as_secs_f32());
         }
+
+        let c: Option<Float> = if ctx.mouse.button_just_pressed(MouseButton::Left) {
+            Some(5e-3)
+        } else if ctx.mouse.button_just_pressed(MouseButton::Right) {
+            Some(-5e-3)
+        } else {
+            None
+        };
+
+        if let Some(c) = c {
+            self.universe.add_object(
+                Object::new(
+                    Vector::from(ctx.mouse.position()) * units::m,
+                    Vector([0.0, 0.0], units::m / units::s),
+                    IntrinsicProperty::new(
+                        Scalar(1.0, units::kg),
+                        Collider::Sphere {
+                            radius: Scalar(20.0, units::m),
+                        },
+                        if c.is_sign_negative() {
+                            Color::RED
+                        } else {
+                            Color::BLUE
+                        },
+                    )
+                    .unwrap()
+                    .with_charge(Scalar(c, units::C))
+                    .unwrap(),
+                )
+                .unwrap(),
+            );
+        }
         Ok(())
     }
 
@@ -103,8 +152,9 @@ impl EventHandler for Universe {
         let mut canvas = Canvas::from_frame(ctx, Color::BLACK);
 
         let mb = &mut MeshBuilder::new();
-        self.draw_field(mb, ctx)?;
+
         self.draw_bodies(mb)?;
+        self.draw_field(mb, ctx)?;
 
         let mesh = Mesh::from_data(ctx, mb.build());
         canvas.draw(&mesh, DrawParam::new());
