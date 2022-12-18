@@ -1,7 +1,10 @@
 #![allow(non_upper_case_globals)]
+#![allow(clippy::excessive_precision)]
 
 pub mod units {
     use crate::unit::Unit;
+    use crate::Scalar;
+    use std::f32::consts::PI;
 
     /// Kilogram
     pub const kg: Unit = Unit::M;
@@ -93,6 +96,62 @@ pub mod units {
     /// Katal
     pub const kat: Unit = mol.div(s);
 
+    /// Volt-Ampere Reactive
+    pub const VA: Unit = V.mul(A);
+
+    /// Minute
+    pub const min: Scalar = Scalar(60.0, s);
+
+    /// Hour
+    pub const hr: Scalar = Scalar(3600.0, s);
+
+    /// Day
+    pub const d: Scalar = Scalar(86400.0, s);
+
+    /// Astronomical Unit
+    pub const au: Scalar = Scalar(149597870700.0, m);
+
+    /// Degree
+    pub const deg: Scalar = Scalar(PI / 180.0, rad);
+
+    crate::c! {
+        /// Arcminute
+        pub const arcmin: Scalar = deg / 60.0;
+
+        /// Arcsecond
+        pub const arcsec: Scalar = arcmin() / 60.0;
+    }
+
+    /// Hectare
+    pub const ha: Scalar = Scalar(10000.0, m.pow(2));
+
+    /// Litre
+    pub const L: Scalar = Scalar(0.001, m.pow(3));
+
+    /// Tonne
+    pub const t: Scalar = Scalar(1000.0, kg);
+
+    /// Dalton
+    pub const Da: Scalar = Scalar(1.66053906660e-27, kg);
+
+    /// Galileo
+    pub const gal: Scalar = Scalar(0.01, m.div(s.pow(2)));
+
+    /// Unified Atomic Mass Unit
+    pub const u: Scalar = Da;
+
+    /// Parsec
+    pub const pc: Scalar = Scalar(3.0856775814913673e16, m);
+
+    /// Bar
+    pub const bar: Scalar = Scalar(100000.0, Pa);
+
+    /// Standard Atmosphere
+    pub const atm: Scalar = Scalar(101325.0, Pa);
+
+    /// ångström
+    pub const Å: Scalar = Scalar(1e-10, m);
+
     pub const of_velocity: Unit = m.div(s);
     pub const of_acceleration: Unit = m.div(s.pow(2));
     pub const of_jerk: Unit = m.div(s.pow(3));
@@ -176,66 +235,39 @@ pub mod units {
     pub const of_magnetic_susceptibility: Unit = m.div(H);
 }
 
-#[allow(clippy::excessive_precision)]
 pub mod constants {
-    use std::f32::consts::PI;
-
     use super::units::*;
     use crate::Scalar;
-
-    /// Newtonian constant of gravitation
-    pub const G: Scalar = Scalar(6.6743e-11, m.pow(3).div(kg).div(s.pow(2)));
+    pub use std::f32::consts::PI;
 
     /// speed of light in vacuum
     pub const c: Scalar = Scalar(299792458.0, m.div(s));
 
-    /// speed of light in vacuum squared
-    pub const c2: Scalar = Scalar(89875517873681764.0, m.div(s));
-
     /// Planck constant
     pub const h: Scalar = Scalar(6.62607015e-34, J.div(Hz));
 
-    /// Reduced Planck constant / Dirac Constant
-    pub const ℏ: Scalar = Scalar(1.054571817e-34, J.mul(s));
+    /// Hyperfine transition frequency of 133Cs
+    pub const ΔνCs: Scalar = Scalar(9192631770.0, Hz);
 
-    /// Reduced Planck constant / Dirac Constant
-    pub const DiracConstant: Scalar = ℏ;
-
-    /// Vacuum magnetic permeability
-    pub const μ_0: Scalar = Scalar(1.25663706212e-6, N.div(A.pow(2)));
-
-    /// Vacuum magnetic permeability
-    pub const MagneticPermiability: Scalar = μ_0;
-
-    /// Characteristic impedance of vacuum
-    pub const Z_0: Scalar = Scalar(376.730313668, Ω);
-
-    /// Vacuum electric permittivity
-    pub const ε_0: Scalar = Scalar(8.8541878128e-12, C.div(V).div(m));
-
-    /// Vacuum electric permittivity
-    pub const ElectricPermittivity: Scalar = ε_0;
-
-    /// Coulomb constant
-    pub const k_e: Scalar = Scalar(8.9875517923e9, N.mul(m.div(C).pow(2)));
+    /// Elementary charge
+    pub const e: Scalar = Scalar(1.602176634e-19, C);
 
     /// Boltzmann constant
     pub const k_B: Scalar = Scalar(1.380649e-23, J.div(K));
 
-    /// Stefan–Boltzmann constant
-    pub const σ: Scalar = Scalar(5.670374419e-8, W.div(m.pow(2)).div(K.pow(4)));
+    /// Avogadro constant
+    pub const N_A: Scalar = Scalar(6.02214076e23, mol.pow(-1));
 
-    /// Stefan–Boltzmann constant
-    pub const StefanBoltzmannConst: Scalar = σ;
+    /// Atomic mass of carbon-12
+    pub const m_12C: Scalar = Scalar(1.99264687992e-26, kg);
 
-    /// First radiation constant
-    pub const c_1: Scalar = Scalar(33.741771852e-16, W.div(m.pow(2)));
+    /// Luminous efficacy of 540 THz monochromatic radiation
+    pub const K_cd: Scalar = Scalar(683.0, lm.div(W));
 
-    /// First radiation constant for spectral radiance
-    pub const c_1L: Scalar = Scalar(1.1910429723971884e-16, W.mul(m.pow(2).div(sr)));
+    // --------------------------------------------------------------------------
 
-    /// Second radiation constant
-    pub const c_2: Scalar = Scalar(1.438776877e-2, m.mul(K));
+    /// Newtonian constant of gravitation
+    pub const G: Scalar = Scalar(6.6743e-11, m.pow(3).div(kg).div(s.pow(2)));
 
     /// Wien wavelength displacement law constant
     pub const b: Scalar = Scalar(2.897771955e-3, m.mul(K));
@@ -245,33 +277,6 @@ pub mod constants {
 
     /// Wien entropy displacement law constant
     pub const b_entropy: Scalar = Scalar(3.002916077e-3, m.mul(K));
-
-    /// Elementary charge
-    pub const e: Scalar = Scalar(1.602176634e-19, C);
-
-    /// Conductance quantum
-    pub const G_0: Scalar = Scalar(7.748091729e-5, S);
-
-    /// Inverse conductance quantum
-    pub const G_0_inv: Scalar = Scalar(12906.40372, Ω);
-
-    /// Von Klitzing constant
-    pub const R_K: Scalar = Scalar(25812.80745, Ω);
-
-    /// Josephson constant
-    pub const K_J: Scalar = Scalar(483597.8484e9, Hz.div(V));
-
-    /// Fine-structure constant
-    pub const α: Scalar = Scalar(7.2973525693e-3, Null);
-
-    /// Fine-structure constant
-    pub const FineStructureConst: Scalar = α;
-
-    /// Inverse fine-structure constant
-    pub const α_inv: Scalar = Scalar(137.035999084, Null);
-
-    /// Inverse fine-structure constant
-    pub const FineStructureConstInv: Scalar = α_inv;
 
     /// Electron mass
     pub const m_e: Scalar = Scalar(9.1093837015e-31, kg);
@@ -285,29 +290,17 @@ pub mod constants {
     /// Muon mass
     pub const m_μ: Scalar = Scalar(1.883531627e-28, kg);
 
-    /// Muon mass
-    pub const MuonMass: Scalar = m_μ;
-
     /// Tau mass
     pub const m_τ: Scalar = Scalar(3.16754e-27, kg);
-
-    /// Tau mass
-    pub const TauMass: Scalar = m_τ;
 
     /// Top quark mass
     pub const m_t: Scalar = Scalar(3.0784e-25, kg);
 
-    /// Proton to electron mass ratio
-    pub const m_p_ratio_m_e: Scalar = Scalar(1836.15267343, Null);
-
     /// W to Z mass ratio
     pub const m_W_ratio_m_Z: Scalar = Scalar(0.88153, kg);
 
-    /// Weak mixing angle
-    pub const sin2_θ_W: Scalar = Scalar(0.22290, Null);
-
-    /// Weak mixing angle
-    pub const WeakMixingAngle: Scalar = sin2_θ_W;
+    /// Proton g-factor
+    pub const g_p: Scalar = Scalar(5.5856946893, Null);
 
     /// Electron g-factor
     pub const g_e: Scalar = Scalar(-2.00231930436256, Null);
@@ -315,164 +308,127 @@ pub mod constants {
     /// Muon g-factor
     pub const g_μ: Scalar = Scalar(-2.0023318418, Null);
 
-    /// Muon g-factor
-    pub const MuonGFactor: Scalar = g_μ;
+    crate::c! {
+        /// speed of light in vacuum squared
+        pub const c2: Scalar = c.squared();
 
-    /// Proton g-factor
-    pub const g_p: Scalar = Scalar(5.5856946893, Null);
+        /// Reduced Planck constant / Dirac Constant
+        pub const ℏ: Scalar = h / (2.0 * PI);
 
-    /// Quantum of circulation
-    pub const quantum_of_circulation: Scalar = Scalar(3.6369475516e-4, m.pow(2).div(s));
+        /// Vacuum magnetic permeability
+        pub const μ_0: Scalar = 2.0 * α() * h / (e.squared() * c);
 
-    /// Bohr magneton
-    pub const μ_B: Scalar = Scalar(9.2740100783e-24, J.div(T));
+        /// Characteristic impedance of vacuum
+        pub const Z_0: Scalar = (ε_0() * c).recip();
 
-    /// Nuclear magneton
-    pub const μ_N: Scalar = Scalar(5.0507837461e-27, J.div(T));
+        /// Vacuum electric permittivity
+        pub const ε_0: Scalar = (μ_0() * c2()).recip();
 
-    /// Classical electron radius
-    pub const r_e: Scalar = Scalar(2.8179403262e-15, m);
+        /// Coulomb constant
+        pub const k_e: Scalar = (4.0 * PI * ε_0()).recip();
 
-    /// Thomson cross section
-    pub const σ_e: Scalar = Scalar(6.6524587321e-29, m.pow(2));
+        /// Stefan–Boltzmann constant
+        pub const σ: Scalar = 2.0 * PI.powi(5) * k_B.powi(4) / (15.0 * h.powi(3) * c2());
 
-    /// Thomson cross section
-    pub const ThomsonCrossSection: Scalar = σ_e;
+        /// First radiation constant
+        pub const c_1: Scalar = 2.0 * PI * h * c2();
 
-    /// Bohr radius
-    pub const a_0: Scalar = Scalar(5.29177210903e-11, m);
+        /// First radiation constant for spectral radiance
+        pub const c_1L: Scalar = 2.0 * h * c2() / sr;
 
-    /// Hartree energy
-    pub const E_h: Scalar = Scalar(4.3597447222071e-18, J);
+        /// Second radiation constant
+        pub const c_2: Scalar = h * c / k_B;
 
-    /// Rydberg unit of energy
-    pub const R_y: Scalar = Scalar(10973731.568160, m.pow(-1));
+        /// Conductance quantum
+        pub const G_0: Scalar = 2.0 * e.squared() / h;
 
-    /// Rydberg constant
-    pub const R_H: Scalar = Scalar(10973731.568160, m.pow(-1));
+        /// Inverse conductance quantum
+        pub const G_0_inv: Scalar = G_0().recip();
 
-    /// Fermi coupling constant (1.1663787e-5 GeV)
-    pub const fermi_coupling_constant: Scalar = Scalar(2.200805022e-20, J);
+        /// Von Klitzing constant
+        pub const R_K: Scalar = h / e.squared();
 
-    /// Avogadro constant
-    pub const N_A: Scalar = Scalar(6.02214076e23, mol.pow(-1));
+        /// Josephson constant
+        pub const K_J: Scalar = 2.0 * e / h;
 
-    /// Molar gas constant
-    pub const R: Scalar = Scalar(8.31446261815324, J.div(mol).div(K));
+        /// Magnetic Flux Quantum
+        pub const  Φ_0: Scalar = K_J().recip();
 
-    /// Faraday constant
-    pub const F: Scalar = Scalar(96485.33212331002, C.div(mol));
+        /// Fine-structure constant
+        pub const α: Scalar = e.squared() / (4.0 * PI * ε_0() * ℏ() * c);
 
-    /// Molar Planck constant
-    pub const N_A_h: Scalar = Scalar(3.9903127128934314e-10, J.mul(s).div(mol));
+        /// Inverse fine-structure constant
+        pub const α_inv: Scalar = α().recip();
 
-    /// Atomic mass of carbon-12
-    pub const m_12C: Scalar = Scalar(1.99264687992e-26, kg);
+        /// Proton to electron mass ratio
+        pub const m_p_ratio_m_e: Scalar = m_p / m_e;
 
-    /// Molar mass of carbon-12
-    pub const M_12C: Scalar = Scalar(11.9999999958e-3, kg.div(mol));
+        /// Weak mixing angle
+        pub const sin2_θ_W: Scalar = 1.0 - m_W_ratio_m_Z.squared();
 
-    /// Atomic mass constant
-    pub const m_u: Scalar = Scalar(1.66053906660e-27, kg);
+        /// Quantum of circulation
+        pub const QuantumOfCirculation: Scalar = h / (2.0 * m_e);
 
-    /// Molar mass constant
-    pub const M_u: Scalar = Scalar(0.99999999965e-3, kg);
+        /// Bohr magneton
+        pub const μ_B: Scalar = e * h / (4.0 * PI * m_e);
 
-    /// Molar volume of Silicon
-    pub const V_m_Si: Scalar = Scalar(1.205883199e-5, m.pow(3).div(mol));
+        /// Nuclear magneton
+        pub const μ_N: Scalar = e * h / (4.0 * PI * m_p);
 
-    /// Hyperfine transition frequency of 133Cs
-    pub const ΔνCs: Scalar = Scalar(9192631770.0, Hz);
+        /// Classical electron radius
+        pub const r_e: Scalar = e.squared() * k_e() / (m_e * c2());
 
-    /// Hyperfine transition frequency of 133Cs
-    pub const TransitionFrequency133Cs: Scalar = ΔνCs;
+        /// Thomson cross section
+        pub const σ_e: Scalar = 8.0 * PI * r_e().squared() / 3.0;
 
-    /// Omega sub Lambda
-    pub const Ω_Λ: Scalar = Scalar(0.6889, Null);
+        /// Bohr radius
+        pub const a_0: Scalar = r_e() / α().squared();
 
-    /// Omega sub Lambda
-    pub const OmegaSubLambda: Scalar = Ω_Λ;
+        /// Hartree energy
+        pub const E_h: Scalar = α().squared() * c2() * m_e;
 
-    /// Einstein gravitational constant
-    pub const κ: Scalar = Scalar(2.076579e-43, N.recip());
+        /// Rydberg unit of energy
+        pub const R_y: Scalar = E_h() / 2.0;
 
-    /// Einstein gravitational constant
-    pub const EinsteinGravitationalConstant: Scalar = κ;
+        /// Rydberg constant
+        pub const R_H: Scalar = α().squared() * m_e * c / (2.0 * h);
 
-    /// Luminous efficacy of 540 THz monochromatic radiation
-    pub const K_cd: Scalar = Scalar(683.0, lm.div(W));
+        /// Molar gas constant
+        pub const R: Scalar = N_A * k_B;
 
-    /// Minute
-    pub const min: Scalar = Scalar(60.0, s);
+        /// Faraday constant
+        pub const F: Scalar = N_A * e;
 
-    /// Hour
-    pub const hr: Scalar = Scalar(3600.0, s);
+        /// Molar mass of carbon-12
+        pub const M_12C: Scalar = N_A * m_12C;
 
-    /// Day
-    pub const d: Scalar = Scalar(86400.0, s);
+        /// Atomic mass constant
+        pub const m_u: Scalar = m_12C / 12.0;
 
-    /// Astronomical Unit
-    pub const au: Scalar = Scalar(149597870700.0, m);
+        /// Molar mass constant
+        pub const M_u: Scalar = M_12C() / 12.0;
 
-    /// Degree
-    pub const deg: Scalar = Scalar(PI / 180.0, rad);
+        /// Einstein gravitational constant
+        pub const κ: Scalar = 8.0 * PI * G / c2();
 
-    /// Arcminute
-    pub const arcmin: Scalar = Scalar(PI / 10800.0, rad);
+        /// Electron Volt
+        pub const eV: Scalar = e * V;
 
-    /// Arcsecond
-    pub const arcsec: Scalar = Scalar(PI / 648000.0, rad);
+        /// Molar Planck constant
+        pub const N_A_h: Scalar = N_A * h;
 
-    /// Hectare
-    pub const ha: Scalar = Scalar(10000.0, m.pow(2));
+        /// Planck length
+        pub const l_P: Scalar = (ℏ() * G / c.powi(3)).sqrt();
 
-    /// Litre
-    pub const L: Scalar = Scalar(0.001, m.pow(3));
+        /// Planck time
+        pub const t_P: Scalar = (ℏ() * G / c.powi(5)).sqrt();
 
-    /// Tonne
-    pub const t: Scalar = Scalar(1000.0, kg);
+        /// Planck mass
+        pub const m_P: Scalar = (ℏ() * c / G).sqrt();
 
-    /// Dalton
-    pub const Da: Scalar = Scalar(1.66053906660e-27, kg);
-
-    /// Electron Volt
-    pub const eV: Scalar = Scalar(1.602176634e-19, J);
-
-    /// Galileo
-    pub const gal: Scalar = Scalar(0.01, m.div(s.pow(2)));
-
-    /// Unified Atomic Mass Unit
-    pub const u: Scalar = Da;
-
-    /// Volt-Ampere Reactive
-    pub const var: Scalar = Scalar(1.0, V.mul(A));
-
-    /// Parsec
-    pub const pc: Scalar = Scalar(3.0856775814913673e16, m);
-
-    /// Bar
-    pub const bar: Scalar = Scalar(100000.0, Pa);
-
-    /// Standard Atmosphere
-    pub const atm: Scalar = Scalar(101325.0, Pa);
-
-    /// ångström
-    pub const Å: Scalar = Scalar(1e-10, m);
-
-    /// ångström
-    pub const Angstrom: Scalar = Å;
-
-    /// Planck length
-    pub const l_P: Scalar = Scalar(1.616255e-35, m);
-
-    /// Planck time
-    pub const t_P: Scalar = Scalar(5.391247e-44, s);
-
-    /// Planck mass
-    pub const m_P: Scalar = Scalar(2.176434e-8, kg);
-
-    /// Planck temperature
-    pub const T_P: Scalar = Scalar(1.416784e32, K);
+        /// Planck temperature
+        pub const T_P: Scalar = (ℏ() * c.powi(5) / G).sqrt() / k_B;
+    }
 }
 
 use crate::Vector;

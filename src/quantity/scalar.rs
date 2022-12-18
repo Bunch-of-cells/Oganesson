@@ -21,6 +21,7 @@ impl Scalar {
         Scalar(0.0, Null)
     }
 
+    #[inline(always)]
     pub fn is_zero(&self) -> bool {
         self.0.abs() <= Float::EPSILON
     }
@@ -53,30 +54,38 @@ impl Scalar {
         self.1
     }
 
+    #[inline(always)]
     /// **This does not raise the units to the given power, use it at your own risk**
     pub fn powf(self, n: Float) -> Scalar {
         Scalar(self.0.powf(n), self.1)
     }
 
+    #[inline(always)]
     pub fn powi(self, n: i32) -> Scalar {
         Scalar(self.0.powi(n), self.1.pow(n))
     }
 
-    pub fn try_radical(self, n: i32) -> Option<Scalar> {
-        Some(Scalar(
-            self.0.powf(1.0 / n as Float),
-            self.1.try_radical(n)?,
-        ))
+    #[inline(always)]
+    pub fn sqrt(self) -> Scalar {
+        Scalar(self.0.powf(0.5), self.1.radical(2))
     }
 
+    #[inline(always)]
+    pub fn radical(self, n: i32) -> Scalar {
+        Scalar(self.0.powf(1.0 / n as Float), self.1.radical(n))
+    }
+
+    #[inline(always)]
     pub fn abs(self) -> Scalar {
         Scalar(self.0.abs(), self.1)
     }
 
+    #[inline(always)]
     pub fn squared(self) -> Scalar {
         Scalar(self.0.powi(2), self.1.pow(2))
     }
 
+    #[inline(always)]
     pub fn recip(self) -> Scalar {
         Scalar(self.0.recip(), self.1.recip())
     }

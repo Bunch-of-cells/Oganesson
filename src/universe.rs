@@ -58,9 +58,9 @@ impl<const N: usize> Universe<N> {
             .collect::<Vec<_>>();
         (
             move |x: Vector<N>| {
-                constants::k_e
+                constants::k_e()
                     * charge_pos.iter().fold(
-                        Vector::zero() * units::N / units::C / constants::k_e.unit(),
+                        Vector::zero() * units::N / units::C / constants::k_e().unit(),
                         |potential, &(charge, pos)| {
                             let r = x - pos;
                             if r.is_zero() {

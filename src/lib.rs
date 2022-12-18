@@ -12,6 +12,3 @@ pub use collision::{Collider, Quaternion, Transform};
 pub use object::{IntrinsicProperty, Object, ObjectAttributes};
 pub use quantity::*;
 pub use universe::Universe;
-
-type Float = f32;
-const STEP: Float = 1e-3;

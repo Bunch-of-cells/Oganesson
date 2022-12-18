@@ -9,6 +9,10 @@ use crate::{Float, Scalar};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub enum SIPrefix {
+    /// quetta
+    Q = 30,
+    /// ronna
+    R = 27,
     /// yotta
     Y = 24,
     /// zetta
@@ -49,6 +53,10 @@ pub enum SIPrefix {
     z = -21,
     /// yocto
     y = -24,
+    /// ronto
+    r = -27,
+    /// quecto
+    q = -30,
 }
 
 impl Mul<Float> for SIPrefix {
@@ -202,7 +210,8 @@ impl Unit {
         }
     }
 
-    pub fn try_radical(self, exp: i32) -> Option<Unit> {
+    #[inline(always)]
+    pub fn radical(self, exp: i32) -> Unit {
         if [
             self.length,
             self.mass,
@@ -215,10 +224,10 @@ impl Unit {
         .iter()
         .any(|&unit| unit % exp != 0)
         {
-            return None;
+            panic!("Can't");
         }
 
-        Some(Unit {
+        Unit {
             length: self.length / exp,
             mass: self.mass / exp,
             time: self.time / exp,
@@ -226,7 +235,7 @@ impl Unit {
             electric_current: self.electric_current / exp,
             amount_of_substance: self.amount_of_substance / exp,
             luminous_intensity: self.luminous_intensity / exp,
-        })
+        }
     }
 
     pub const fn recip(self) -> Unit {
