@@ -3,7 +3,8 @@ use std::{
     ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Neg, Sub, SubAssign},
 };
 
-use ggez::mint::{Point2, Point3};
+#[cfg(feature = "simulation")]
+use piston_window::types::Vec2d;
 
 use crate::{
     unit::{Unit, UnitError},
@@ -386,29 +387,8 @@ impl<const T: usize> Div<Unit> for Vector<T> {
 }
 
 #[cfg(feature = "simulation")]
-impl From<Vector<2>> for Point2<Float> {
-    fn from(vector: Vector<2>) -> Self {
-        vector.0.into()
-    }
-}
-
-#[cfg(feature = "simulation")]
-impl From<Point2<Float>> for Vector<2> {
-    fn from(point: Point2<Float>) -> Self {
-        [point.x, point.y].into()
-    }
-}
-
-#[cfg(feature = "simulation")]
-impl From<Vector<3>> for Point3<Float> {
-    fn from(vector: Vector<3>) -> Self {
-        vector.0.into()
-    }
-}
-
-#[cfg(feature = "simulation")]
-impl From<Point3<Float>> for Vector<3> {
-    fn from(point: Point3<Float>) -> Self {
-        [point.x, point.y, point.z].into()
+impl Into<Vec2d<f64>> for Vector<2> {
+    fn into(self) -> Vec2d<f64> {
+        self.0.map(|a| a as f64)
     }
 }

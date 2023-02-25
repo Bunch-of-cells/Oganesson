@@ -4,7 +4,7 @@
 pub mod units {
     use crate::unit::Unit;
     use crate::Scalar;
-    use std::f32::consts::PI;
+    use std::f64::consts::PI;
 
     /// Kilogram
     pub const kg: Unit = Unit::M;
@@ -237,8 +237,10 @@ pub mod units {
 
 pub mod constants {
     use super::units::*;
-    use crate::Scalar;
-    pub use std::f32::consts::PI;
+    use crate::{unit::SIPrefix, Scalar};
+    pub use std::f64::consts::PI;
+
+    // SI-UNITS-----------------------------------------------------------------
 
     /// speed of light in vacuum
     pub const c: Scalar = Scalar(299792458.0, m.div(s));
@@ -258,9 +260,6 @@ pub mod constants {
     /// Avogadro constant
     pub const N_A: Scalar = Scalar(6.02214076e23, mol.pow(-1));
 
-    /// Atomic mass of carbon-12
-    pub const m_12C: Scalar = Scalar(1.99264687992e-26, kg);
-
     /// Luminous efficacy of 540 THz monochromatic radiation
     pub const K_cd: Scalar = Scalar(683.0, lm.div(W));
 
@@ -268,6 +267,9 @@ pub mod constants {
 
     /// Newtonian constant of gravitation
     pub const G: Scalar = Scalar(6.6743e-11, m.pow(3).div(kg).div(s.pow(2)));
+
+    /// Fine-structure constant
+    pub const α: Scalar = Scalar(0.0072973525693, Null);
 
     /// Wien wavelength displacement law constant
     pub const b: Scalar = Scalar(2.897771955e-3, m.mul(K));
@@ -297,7 +299,7 @@ pub mod constants {
     pub const m_t: Scalar = Scalar(3.0784e-25, kg);
 
     /// W to Z mass ratio
-    pub const m_W_ratio_m_Z: Scalar = Scalar(0.88153, kg);
+    pub const m_W_ratio_m_Z: Scalar = Scalar(0.88153, Null);
 
     /// Proton g-factor
     pub const g_p: Scalar = Scalar(5.5856946893, Null);
@@ -316,7 +318,7 @@ pub mod constants {
         pub const ℏ: Scalar = h / (2.0 * PI);
 
         /// Vacuum magnetic permeability
-        pub const μ_0: Scalar = 2.0 * α() * h / (e.squared() * c);
+        pub const μ_0: Scalar = 2.0 * α * h / (e.squared() * c);
 
         /// Characteristic impedance of vacuum
         pub const Z_0: Scalar = (ε_0() * c).recip();
@@ -352,18 +354,18 @@ pub mod constants {
         pub const K_J: Scalar = 2.0 * e / h;
 
         /// Magnetic Flux Quantum
-        pub const  Φ_0: Scalar = K_J().recip();
-
-        /// Fine-structure constant
-        pub const α: Scalar = e.squared() / (4.0 * PI * ε_0() * ℏ() * c);
+        pub const Φ_0: Scalar = K_J().recip();
 
         /// Inverse fine-structure constant
-        pub const α_inv: Scalar = α().recip();
+        pub const α_inv: Scalar = α.recip();
 
         /// Proton to electron mass ratio
         pub const m_p_ratio_m_e: Scalar = m_p / m_e;
 
         /// Weak mixing angle
+        pub const θ_W: Scalar = m_W_ratio_m_Z.acos() * Null;
+
+        /// sin^2 Weak mixing angle
         pub const sin2_θ_W: Scalar = 1.0 - m_W_ratio_m_Z.squared();
 
         /// Quantum of circulation
@@ -382,16 +384,16 @@ pub mod constants {
         pub const σ_e: Scalar = 8.0 * PI * r_e().squared() / 3.0;
 
         /// Bohr radius
-        pub const a_0: Scalar = r_e() / α().squared();
+        pub const a_0: Scalar = r_e() / α.squared();
 
         /// Hartree energy
-        pub const E_h: Scalar = α().squared() * c2() * m_e;
+        pub const E_h: Scalar = α.squared() * c2() * m_e;
 
         /// Rydberg unit of energy
         pub const R_y: Scalar = E_h() / 2.0;
 
         /// Rydberg constant
-        pub const R_H: Scalar = α().squared() * m_e * c / (2.0 * h);
+        pub const R_H: Scalar = α.squared() * m_e * c / (2.0 * h);
 
         /// Molar gas constant
         pub const R: Scalar = N_A * k_B;
@@ -399,11 +401,14 @@ pub mod constants {
         /// Faraday constant
         pub const F: Scalar = N_A * e;
 
+        /// Atomic mass of carbon-12
+        pub const m_12C: Scalar = 12.0 * SIPrefix::m * kg / N_A;
+
         /// Molar mass of carbon-12
-        pub const M_12C: Scalar = N_A * m_12C;
+        pub const M_12C: Scalar = N_A * m_12C();
 
         /// Atomic mass constant
-        pub const m_u: Scalar = m_12C / 12.0;
+        pub const m_u: Scalar = m_12C() / 12.0;
 
         /// Molar mass constant
         pub const M_u: Scalar = M_12C() / 12.0;

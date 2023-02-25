@@ -1,6 +1,9 @@
 #![allow(confusable_idents)]
 #![allow(uncommon_codepoints)]
 
+#[cfg(feature = "simulation")]
+extern crate piston_window;
+
 pub mod collision;
 pub mod object;
 pub mod quantity;

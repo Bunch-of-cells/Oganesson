@@ -8,7 +8,7 @@ pub use consts::*;
 pub use scalar::Scalar;
 pub use vector::Vector;
 
-pub type Float = f32;
+pub type Float = f64;
 pub const STEP: Float = 1e-3;
 
 #[macro_export]
@@ -23,10 +23,10 @@ macro_rules! c {
         }
     };
     ($(#[$attr:meta])* pub const $N:ident : $T:ty = $e:expr;) => {
-        c!($($attr)* (pub) const $N : $T = $e)
+        $crate::c!($(#[$attr])* (pub) const $N : $T = $e;)
     };
     ($(#[$attr:meta])* const $N:ident : $T:ty = $e:expr;) => {
-        c!($($attr)* () const $N : $T = $e)
+        $crate::c!($(#[$attr])* () const $N : $T = $e;)
     };
     ($($(#[$attr:meta])* pub const $N:ident : $T:ty = $e:expr;)*) => {
         $($crate::c!($(#[$attr])* (pub) const $N : $T = $e;);)*

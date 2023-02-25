@@ -8,7 +8,7 @@ pub struct Quaternion {
     pub z: f32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Transform<const N: usize> {
     pub(crate) position: Vector<N>,
 }

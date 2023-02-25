@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use crate::{unit::UnitError, units, Collider, Float, Scalar, Transform, Vector};
 
 #[cfg(feature = "simulation")]
-use ggez::graphics::Color;
+use crate::simulation::Color;
 
 #[derive(Clone)]
 pub struct Object<const N: usize> {
@@ -64,7 +64,7 @@ impl<const N: usize> Object<N> {
 
         Ok(Object {
             velocity: [velocity; 4],
-            transform: [Transform::new(position), Transform::new(position)],
+            transform: [Transform::new(position); 2],
             intrinsic,
         })
     }
@@ -89,8 +89,8 @@ impl<const N: usize> Object<N> {
         self.velocity = [velocity; 4];
     }
 
-    pub(crate) fn set_position_prev(&mut self) {
-        self.transform.rotate_left(1)
+    pub(crate) fn set_position(&mut self, position: Vector<N>) {
+        self.transform = [Transform::new(position); 2];
     }
 
     pub fn is_collision(&self, other: &Object<N>) -> Option<Vector<N>> {

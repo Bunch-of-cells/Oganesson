@@ -1,7 +1,7 @@
 use crate::{
     collision::{possible_collisions, Collision},
     constants,
-    field::VectorField,
+    field::{ScalarField, VectorField},
     scalar::Scalar,
     units, Float, Object, Vector,
 };
@@ -40,14 +40,13 @@ impl<const N: usize> Universe<N> {
 
     pub fn step(&mut self, dt: Float) {
         let dt = dt * units::s;
-        self.resolve_collisions(dt);
-
         let electric = self.electric_field();
 
         for object in self.objects.iter_mut() {
             let force = electric.at(object.position()).unwrap() * object.charge();
             object.update(dt, force);
         }
+        self.resolve_collisions(dt);
     }
 
     pub fn electric_field(&self) -> VectorField<'static, N> {
@@ -61,17 +60,43 @@ impl<const N: usize> Universe<N> {
                 constants::k_e()
                     * charge_pos.iter().fold(
                         Vector::zero() * units::N / units::C / constants::k_e().unit(),
-                        |potential, &(charge, pos)| {
+                        |field, &(charge, pos)| {
                             let r = x - pos;
                             if r.is_zero() {
-                                potential
+                                field
                             } else {
-                                potential + charge / r.magnitude().squared() * r.normalized()
+                                field + charge / r.dot(&r) * r.normalized()
                             }
                         },
                     )
             },
             units::N / units::C,
+        )
+            .into()
+    }
+
+    pub fn electric_potential(&self) -> ScalarField<'static, N> {
+        let charge_pos = self
+            .objects
+            .iter()
+            .map(|object| (object.charge(), object.position()))
+            .collect::<Vec<_>>();
+        (
+            move |x: Vector<N>| {
+                constants::k_e()
+                    * charge_pos.iter().fold(
+                        Scalar::zero() * units::J / units::C / constants::k_e().unit(),
+                        |field, &(charge, pos)| {
+                            let r = x - pos;
+                            if r.is_zero() {
+                                field
+                            } else {
+                                field + charge / r.magnitude()
+                            }
+                        },
+                    )
+            },
+            units::J / units::C,
         )
             .into()
     }
@@ -88,12 +113,12 @@ impl<const N: usize> Universe<N> {
                 constants::G
                     * mass_pos.iter().fold(
                         Vector::zero() * units::N / units::kg / constants::G.unit(),
-                        |potential, &(mass, pos)| {
+                        |field, &(mass, pos)| {
                             let r = x - pos;
                             if r.is_zero() {
-                                potential
+                                field
                             } else {
-                                potential + mass / r.magnitude().squared() * r.normalized()
+                                field + mass / r.dot(&r) * r.normalized()
                             }
                         },
                     )
@@ -139,6 +164,8 @@ impl<const N: usize> Universe<N> {
             let u_b = b.velocity();
             let m_a = a.mass();
             let m_b = b.mass();
+            let x_a = a.position();
+            let x_b = b.position();
             let e = a
                 .attributes()
                 .restitution_coefficient
@@ -152,21 +179,20 @@ impl<const N: usize> Universe<N> {
                 (false, false) => {
                     let v_a = u_a + j / m_a;
                     let v_b = u_b - j / m_b;
-                    dbg!(v_a, v_b);
                     self.objects[obj_a].set_velocity(v_a);
                     self.objects[obj_b].set_velocity(v_b);
-                    self.objects[obj_a].set_position_prev();
-                    self.objects[obj_b].set_position_prev();
+                    self.objects[obj_a].set_position(x_a + normal / 2.0);
+                    self.objects[obj_b].set_position(x_b - normal / 2.0);
                 }
                 (false, true) => {
                     let v_a = u_a + j / m_a;
                     self.objects[obj_a].set_velocity(v_a);
-                    self.objects[obj_a].set_position_prev();
+                    self.objects[obj_a].set_position(x_a + normal / 2.0);
                 }
                 (true, false) => {
                     let v_b = u_b - j / m_b;
                     self.objects[obj_b].set_velocity(v_b);
-                    self.objects[obj_b].set_position_prev();
+                    self.objects[obj_b].set_position(x_b - normal / 2.0);
                 }
             }
         }

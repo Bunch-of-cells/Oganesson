@@ -203,3 +203,30 @@ impl<'a, const N: usize> Neg for VectorField<'a, N> {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::units::*;
+
+    #[test]
+    fn test_grad() {
+        let f = ScalarField::from((|x: Vector<3>| x[0] * m, m));
+        let f = f.gradient();
+        assert_eq!(f.at(Vector::zero() * m).unwrap().0[0], 1.0)
+    }
+
+    #[test]
+    fn test_div() {
+        let f = VectorField::from((|x: Vector<3>| x, m));
+        let f = f.divergence();
+        assert_eq!(f.at(Vector::zero() * m).unwrap(), 3.0)
+    }
+
+    #[test]
+    fn test_curl() {
+        let f = VectorField::from((|x: Vector<3>| x, m));
+        let f = f.curl();
+        assert_eq!(f.at(Vector::zero() * m).unwrap(), Vector::zero())
+    }
+}
