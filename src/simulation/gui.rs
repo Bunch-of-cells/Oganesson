@@ -114,6 +114,7 @@ impl Universe {
                     ctx.transform,
                     gfx,
                 ),
+                ObjectShape::Point => (),
             };
         }
     }

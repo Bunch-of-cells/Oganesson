@@ -63,4 +63,5 @@ pub enum ObjectShape<const N: usize> {
     Polygon {
         points: Vec<Vector<N>>,
     },
+    Point,
 }

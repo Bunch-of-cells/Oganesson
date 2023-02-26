@@ -16,6 +16,7 @@ pub enum Collider<const N: usize> {
     Polygon {
         points: Vec<Vector<N>>,
     },
+    Point,
 }
 
 impl<const N: usize> Collider<N> {
@@ -51,6 +52,10 @@ impl<const N: usize> Collider<N> {
                     max: position + dist_from_center,
                 }
             }
+            Collider::Point => BoundingBox {
+                min: transform.position,
+                max: transform.position
+            },
             _ => todo!(),
         }
     }

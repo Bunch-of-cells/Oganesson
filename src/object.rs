@@ -27,29 +27,6 @@ impl<const N: usize> Object<N> {
         intrinsic.mass.get_uniterror(units::kg, "mass")?;
         intrinsic.charge.get_uniterror(units::C, "charge")?;
 
-        match intrinsic.collider {
-            Collider::Sphere { radius } => {
-                radius.get_uniterror(units::m, "collider::sphere::radius")?;
-                assert!(radius.value() > 0.0);
-            }
-
-            Collider::Polygon { ref points } => {
-                assert!(points.len() > N);
-                for point in points {
-                    point.get_uniterror(units::Null, "collider::polygon::points")?;
-                }
-            }
-            Collider::Plane { normal } => {
-                normal.get_uniterror(units::Null, "collider::line::normal")?;
-                assert!(normal.magnitude() > 0.0);
-            }
-            Collider::Triangle { a, b, c } => {
-                a.get_uniterror(units::Null, "collider::triange::a")?;
-                b.get_uniterror(units::Null, "collider::triange::a")?;
-                c.get_uniterror(units::Null, "collider::triange::a")?;
-            }
-        }
-
         #[cfg(feature = "relativistic")]
         match velocity
             .magnitude()
@@ -105,6 +82,7 @@ impl<const N: usize> Object<N> {
 
     pub fn is_collision(&self, other: &Object<N>) -> Option<Vector<N>> {
         match (self.collider(), other.collider()) {
+            (_, Collider::Point) | (Collider::Point, _) => None,
             (&Collider::Sphere { radius: r1 }, &Collider::Sphere { radius: r2 }) => {
                 let distance = self.position() - other.position();
                 let direction = distance.normalized();
@@ -132,7 +110,6 @@ impl<const N: usize> Object<N> {
             (Collider::Plane { .. }, Collider::Sphere { .. }) => {
                 other.is_collision(self).map(|v| -v)
             }
-
             _ => todo!(),
         }
     }
@@ -296,7 +273,7 @@ impl<const N: usize> IntrinsicProperty<N> {
         collider: Collider<N>,
         color: Color,
     ) -> Result<IntrinsicProperty<N>, UnitError> {
-        Self::check_units(mass, &collider)?;
+        Self::check_collider_units(mass, &collider)?;
         Ok(Self {
             mass,
             collider,
@@ -306,7 +283,7 @@ impl<const N: usize> IntrinsicProperty<N> {
         })
     }
 
-    fn check_units(mass: Scalar, collider: &Collider<N>) -> Result<(), UnitError> {
+    fn check_collider_units(mass: Scalar, collider: &Collider<N>) -> Result<(), UnitError> {
         mass.get_uniterror(units::kg, "mass")?;
 
         match collider {
@@ -330,6 +307,7 @@ impl<const N: usize> IntrinsicProperty<N> {
                 b.get_uniterror(units::Null, "collider::triange::a")?;
                 c.get_uniterror(units::Null, "collider::triange::a")?;
             }
+            Collider::Point => (),
         }
         Ok(())
     }
