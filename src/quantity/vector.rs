@@ -7,6 +7,7 @@ use std::{
 use piston_window::types::Vec2d;
 
 use crate::{
+    rotation::Quaternion,
     unit::{Unit, UnitError},
     units::Null,
     Float, Scalar,
@@ -107,9 +108,16 @@ impl<const N: usize> Vector<N> {
         Vector(a, Null)
     }
 
-    pub fn truncated<const M: usize>(&self) -> Vector<M> {
-        assert!(M < N, "Vector::truncate: Cannot truncate a {}-dimentional vector into a {}-dimentional vector", N, M);
-        Vector(unsafe { std::mem::transmute_copy(&self.0) }, self.1)
+    pub fn resize<const M: usize>(&self) -> Vector<M> {
+        if M < N {
+            let mut new = [0.0; M];
+            for (i, &x) in self.0.iter().enumerate() {
+                new[i] = x;
+            }
+            Vector(new, self.1)
+        } else {
+            Vector(unsafe { std::mem::transmute_copy(&self.0) }, self.1)
+        }
     }
 
     pub fn project(self, on: &Vector<N>) -> Self {
@@ -155,6 +163,16 @@ impl Vector<2> {
         } else {
             Vector([self.0[1], -self.0[0]], self.1)
         }
+    }
+
+    pub fn rotate(&self, θ: Float) -> Self {
+        Vector(
+            [
+                self[0] * θ.cos() - self[1] * θ.sin(),
+                self[1] * θ.cos() + self[0] * θ.sin(),
+            ],
+            self.1,
+        )
     }
 }
 
@@ -210,6 +228,11 @@ impl Vector<3> {
         let r = (ρ * ρ + z * z).sqrt();
         let θ = (z / r).atan();
         Self::from_spherical_coords(r * ρ.unit(), θ, φ)
+    }
+
+    pub fn rotate(self, q: Quaternion) -> Vector<3> {
+        let t = (2.0 * q.v).cross(&self);
+        self + q.w * t + q.v.cross(&t)
     }
 }
 
