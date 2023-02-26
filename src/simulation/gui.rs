@@ -6,7 +6,9 @@ use std::{
 use piston_window::*;
 
 use super::color::*;
-use crate::{field::VectorField, units, Collider, IntrinsicProperty, Object, Scalar, Vector};
+use crate::{
+    field::VectorField, units, Collider, IntrinsicProperty, Object, ObjectShape, Scalar, Vector,
+};
 
 #[derive(Default)]
 pub struct Universe {
@@ -65,6 +67,9 @@ impl Universe {
                 Object::new(
                     Vector::from(self.mouse_pos.map(|a| a)) * units::m,
                     Vector([0.0, 0.0], units::m / units::s),
+                    ObjectShape::Sphere {
+                        radius: Scalar(20.0, units::m),
+                    },
                     IntrinsicProperty::new(
                         Scalar(1.0, units::kg),
                         Collider::Sphere {
@@ -89,17 +94,17 @@ impl Universe {
         for object in self.objects() {
             let color = object.color();
             let x = object.position();
-            match object.collider() {
-                &Collider::Sphere { radius } => {
+            match object.shape() {
+                &ObjectShape::Sphere { radius } => {
                     let r = radius.value();
                     let rect = [x[0] - r, x[1] - r, r * 2.0, r * 2.0].map(|a| a);
                     ellipse(color, rect, ctx.transform, gfx)
                 }
-                &Collider::Triangle { a, b, c } => {
+                &ObjectShape::Triangle { a, b, c } => {
                     polygon(color, &[a.into(), b.into(), c.into()], ctx.transform, gfx)
                 }
-                Collider::Plane { .. } => todo!(),
-                Collider::Polygon { points } => polygon(
+                ObjectShape::Plane { .. } => todo!(),
+                ObjectShape::Polygon { points } => polygon(
                     color,
                     points
                         .iter()

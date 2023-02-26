@@ -1,27 +1,4 @@
-use crate::{Object, Scalar, Vector};
-
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
-pub struct Quaternion {
-    pub w: f32,
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Transform<const N: usize> {
-    pub(crate) position: Vector<N>,
-}
-
-impl<const N: usize> Transform<N> {
-    pub fn new(position: Vector<N>) -> Transform<N> {
-        Transform { position }
-    }
-
-    pub fn position(&self) -> Vector<N> {
-        self.position
-    }
-}
+use crate::{Object, ObjectID, Scalar, Transform, Vector};
 
 #[derive(Debug, Clone)]
 pub enum Collider<const N: usize> {
@@ -81,8 +58,8 @@ impl<const N: usize> Collider<N> {
 
 #[derive(Debug, Clone)]
 pub struct Collision<const N: usize> {
-    pub obj_a: usize,
-    pub obj_b: usize,
+    pub obj_a: ObjectID,
+    pub obj_b: ObjectID,
     pub normal: Vector<N>,
 }
 

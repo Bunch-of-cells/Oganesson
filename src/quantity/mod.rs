@@ -6,6 +6,8 @@ pub mod unit;
 pub mod vector;
 
 pub use consts::*;
+pub use field::{ScalarField, VectorField};
+pub use rotation::Quaternion;
 pub use scalar::Scalar;
 pub use vector::Vector;
 

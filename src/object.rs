@@ -1,6 +1,9 @@
 use std::fmt::Debug;
 
-use crate::{unit::UnitError, units, Collider, Float, Scalar, Transform, Vector};
+use crate::{
+    transform::Rotation, unit::UnitError, units, Collider, Float, ObjectShape, Scalar, Transform,
+    Vector,
+};
 
 #[cfg(feature = "simulation")]
 use crate::simulation::Color;
@@ -9,13 +12,14 @@ use crate::simulation::Color;
 pub struct Object<const N: usize> {
     velocity: [Vector<N>; 4],
     intrinsic: IntrinsicProperty<N>,
-    transform: [Transform<N>; 2],
+    transform: Transform<N>,
 }
 
 impl<const N: usize> Object<N> {
     pub fn new(
         position: Vector<N>,
         velocity: Vector<N>,
+        shape: ObjectShape<N>,
         intrinsic: IntrinsicProperty<N>,
     ) -> Result<Object<N>, UnitError> {
         position.get_uniterror(units::m, "position")?;
@@ -62,9 +66,15 @@ impl<const N: usize> Object<N> {
             ),
         }
 
+        let transform = Transform::new(
+            position,
+            shape,
+            if N == 2 { Rotation::new_2d() } else { todo!() },
+        );
+
         Ok(Object {
             velocity: [velocity; 4],
-            transform: [Transform::new(position); 2],
+            transform,
             intrinsic,
         })
     }
@@ -79,8 +89,8 @@ impl<const N: usize> Object<N> {
                 + 3.0 * self.velocity[2]
                 + self.velocity[3])
                 / 8.0;
-        self.transform[0] = self.transform[1].clone();
-        self.transform[1].position += velocity * dt;
+
+        self.transform.position += velocity * dt;
         self.velocity.rotate_left(1);
         self.velocity[3] = velocity;
     }
@@ -90,7 +100,7 @@ impl<const N: usize> Object<N> {
     }
 
     pub(crate) fn set_position(&mut self, position: Vector<N>) {
-        self.transform = [Transform::new(position); 2];
+        self.transform.position = position;
     }
 
     pub fn is_collision(&self, other: &Object<N>) -> Option<Vector<N>> {
@@ -111,12 +121,12 @@ impl<const N: usize> Object<N> {
                 other.is_collision(self).map(|v| -v)
             }
 
-            (&Collider::Sphere { radius: _r }, &Collider::Plane { normal: n }) => {
-                let c = other.position();
-                let v = self.velocity[2]; // previous velocity (of last frame)
-                let x = self.transform[0].position; // previous velocity (of last frame)
-                let i = x + (x - c).dot(&n) / v.dot(&n) * v;
-                todo!("{i:?}")
+            (&Collider::Sphere { radius: _r }, &Collider::Plane { normal: _n }) => {
+                // let c = other.position();
+                // let v = self.velocity[2]; // previous velocity (of last frame)
+                // let x = self.transform[0].position; // previous velocity (of last frame)
+                // let i = x + (x - c).dot(&n) / v.dot(&n) * v;
+                todo!()
                 // Some(i)
             }
             (Collider::Plane { .. }, Collider::Sphere { .. }) => {
@@ -169,12 +179,27 @@ impl<const N: usize> Object<N> {
 
     #[inline(always)]
     pub fn transform(&self) -> &Transform<N> {
-        &self.transform[1]
+        &self.transform
     }
 
     #[inline(always)]
     pub fn position(&self) -> Vector<N> {
-        self.transform[1].position
+        self.transform.position
+    }
+
+    #[inline(always)]
+    pub fn shape(&self) -> &ObjectShape<N> {
+        &self.transform.shape
+    }
+
+    #[inline(always)]
+    pub fn rotation(&self) -> Rotation {
+        self.transform.rotation
+    }
+
+    #[inline(always)]
+    pub fn size(&self) -> Scalar {
+        self.transform.size
     }
 
     #[inline(always)]
@@ -240,6 +265,9 @@ impl<const N: usize> Object<N> {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ObjectID(pub(crate) usize);
+
 #[derive(Clone, Debug)]
 pub struct IntrinsicProperty<const N: usize> {
     pub mass: Scalar,
@@ -253,30 +281,7 @@ pub struct IntrinsicProperty<const N: usize> {
 impl<const N: usize> IntrinsicProperty<N> {
     #[cfg(not(feature = "simulation"))]
     pub fn new(mass: Scalar, collider: Collider<N>) -> Result<IntrinsicProperty<N>, UnitError> {
-        mass.get_uniterror(units::kg, "mass")?;
-
-        match collider {
-            Collider::Sphere { radius } => {
-                radius.get_uniterror(units::m, "collider::sphere::radius")?;
-                assert!(radius.value() > 0.0);
-            }
-
-            Collider::Polygon { ref points } => {
-                assert!(points.len() > N);
-                for point in points {
-                    point.get_uniterror(units::Null, "collider::polygon::points")?;
-                }
-            }
-            Collider::Plane { normal } => {
-                normal.get_uniterror(units::Null, "collider::line::normal")?;
-                assert!(normal.magnitude() > 0.0);
-            }
-            Collider::Triangle { a, b, c } => {
-                a.get_uniterror(units::Null, "collider::triange::a")?;
-                b.get_uniterror(units::Null, "collider::triange::a")?;
-                c.get_uniterror(units::Null, "collider::triange::a")?;
-            }
-        }
+        Self::check_units(mass, &collider)?;
         Ok(Self {
             mass,
             collider,
@@ -291,6 +296,17 @@ impl<const N: usize> IntrinsicProperty<N> {
         collider: Collider<N>,
         color: Color,
     ) -> Result<IntrinsicProperty<N>, UnitError> {
+        Self::check_units(mass, &collider)?;
+        Ok(Self {
+            mass,
+            collider,
+            attributes: ObjectAttributes::default(),
+            charge: Scalar::zero() * units::C,
+            color,
+        })
+    }
+
+    fn check_units(mass: Scalar, collider: &Collider<N>) -> Result<(), UnitError> {
         mass.get_uniterror(units::kg, "mass")?;
 
         match collider {
@@ -315,13 +331,7 @@ impl<const N: usize> IntrinsicProperty<N> {
                 c.get_uniterror(units::Null, "collider::triange::a")?;
             }
         }
-        Ok(Self {
-            mass,
-            collider,
-            attributes: ObjectAttributes::default(),
-            charge: Scalar::zero() * units::C,
-            color,
-        })
+        Ok(())
     }
 
     pub fn with_charge(mut self, charge: Scalar) -> Result<IntrinsicProperty<N>, UnitError> {

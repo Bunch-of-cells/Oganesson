@@ -33,3 +33,12 @@ impl Mul for Quaternion {
         }
     }
 }
+
+impl Default for Quaternion {
+    fn default() -> Self {
+        Quaternion {
+            w: 1.0,
+            v: Vector::zero(),
+        }
+    }
+}

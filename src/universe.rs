@@ -1,9 +1,6 @@
 use crate::{
     collision::{possible_collisions, Collision},
-    constants,
-    field::{ScalarField, VectorField},
-    scalar::Scalar,
-    units, Float, Object, Vector,
+    constants, units, Float, Object, ObjectID, Scalar, ScalarField, Vector, VectorField,
 };
 
 pub struct Universe<const N: usize> {
@@ -21,12 +18,16 @@ impl<const N: usize> Universe<N> {
         &self.objects
     }
 
-    pub fn add_object(&mut self, object: Object<N>) -> &mut Self {
+    pub fn add_object(&mut self, object: Object<N>) -> ObjectID {
         self.objects.push(object);
-        self
+        ObjectID(self.objects.len() - 1)
     }
 
-    pub fn add_objects(&mut self, objects: impl IntoIterator<Item = Object<N>>) -> &mut Self {
+    pub fn delete_object(&mut self, object: ObjectID) -> Object<N> {
+        self.objects.remove(object.0)
+    }
+
+    pub fn with_objects(&mut self, objects: impl IntoIterator<Item = Object<N>>) -> &mut Self {
         self.objects.extend(objects);
         self
     }
@@ -137,8 +138,8 @@ impl<const N: usize> Universe<N> {
             let obj_b = &self.objects[b];
             if let Some(normal) = obj_a.is_collision(obj_b) {
                 collisions.push(Collision {
-                    obj_a: a,
-                    obj_b: b,
+                    obj_a: ObjectID(a),
+                    obj_b: ObjectID(b),
                     normal,
                 });
             }
@@ -148,8 +149,8 @@ impl<const N: usize> Universe<N> {
 
     fn resolve_collisions(&mut self, _dt: Scalar) {
         for Collision {
-            obj_a,
-            obj_b,
+            obj_a: ObjectID(obj_a),
+            obj_b: ObjectID(obj_b),
             normal,
         } in self.find_collisions()
         {
@@ -208,7 +209,7 @@ impl<const N: usize> Default for Universe<N> {
 impl<const N: usize, const T: usize> From<[Object<N>; T]> for Universe<N> {
     fn from(objects: [Object<N>; T]) -> Self {
         let mut world = Self::new();
-        world.add_objects(objects);
+        world.with_objects(objects);
         world
     }
 }

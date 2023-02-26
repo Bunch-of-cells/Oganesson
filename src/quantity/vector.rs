@@ -410,8 +410,8 @@ impl<const T: usize> Div<Unit> for Vector<T> {
 }
 
 #[cfg(feature = "simulation")]
-impl Into<Vec2d<f64>> for Vector<2> {
-    fn into(self) -> Vec2d<f64> {
-        self.0.map(|a| a as f64)
+impl From<Vector<2>> for Vec2d<f64> {
+    fn from(v: Vector<2>) -> Vec2d<f64> {
+        v.0
     }
 }
