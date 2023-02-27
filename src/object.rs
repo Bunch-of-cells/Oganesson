@@ -20,6 +20,7 @@ impl<const N: usize> Object<N> {
         position: Vector<N>,
         velocity: Vector<N>,
         shape: ObjectShape<N>,
+        collider: bool,
         intrinsic: IntrinsicProperty<N>,
     ) -> Result<Object<N>, UnitError> {
         position.get_uniterror(units::m, "position")?;
@@ -43,10 +44,26 @@ impl<const N: usize> Object<N> {
             ),
         }
 
+        match shape {
+            ObjectShape::Sphere { radius } => {
+                radius.get_uniterror(units::m, "collider::sphere::radius")?;
+                assert!(radius.value() > 0.0);
+            }
+
+            ObjectShape::Polygon { ref points } => {
+                assert!(points.len() > N);
+                for point in points {
+                    point.get_uniterror(units::m, "collider::polygon::points")?;
+                }
+            }
+            ObjectShape::Point => (),
+        }
+
         let transform = Transform::new(
             position,
             shape,
             if N == 2 { Rotation::new_2d() } else { todo!() },
+            collider,
         );
 
         Ok(Object {
@@ -78,40 +95,6 @@ impl<const N: usize> Object<N> {
 
     pub(crate) fn set_position(&mut self, position: Vector<N>) {
         self.transform.position = position;
-    }
-
-    pub fn is_collision(&self, other: &Object<N>) -> Option<Vector<N>> {
-        match (self.collider(), other.collider()) {
-            (_, Collider::Point) | (Collider::Point, _) => None,
-            (&Collider::Sphere { radius: r1 }, &Collider::Sphere { radius: r2 }) => {
-                let distance = self.position() - other.position();
-                let direction = distance.normalized();
-                let distance = distance.magnitude().abs();
-                if distance >= r1 + r2 {
-                    None
-                } else {
-                    Some(direction * (r1 + r2 - distance))
-                }
-            }
-
-            (Collider::Polygon { .. }, Collider::Sphere { .. }) => None,
-            (Collider::Sphere { .. }, Collider::Polygon { .. }) => {
-                other.is_collision(self).map(|v| -v)
-            }
-
-            (&Collider::Sphere { radius: _r }, &Collider::Plane { normal: _n }) => {
-                // let c = other.position();
-                // let v = self.velocity[2]; // previous velocity (of last frame)
-                // let x = self.transform[0].position; // previous velocity (of last frame)
-                // let i = x + (x - c).dot(&n) / v.dot(&n) * v;
-                todo!()
-                // Some(i)
-            }
-            (Collider::Plane { .. }, Collider::Sphere { .. }) => {
-                other.is_collision(self).map(|v| -v)
-            }
-            _ => todo!(),
-        }
     }
 
     #[cfg(not(feature = "relativistic"))]
@@ -170,6 +153,11 @@ impl<const N: usize> Object<N> {
     }
 
     #[inline(always)]
+    pub fn collider(&self) -> &Collider<N> {
+        &self.transform.collider
+    }
+
+    #[inline(always)]
     pub fn rotation(&self) -> Rotation {
         self.transform.rotation
     }
@@ -177,11 +165,6 @@ impl<const N: usize> Object<N> {
     #[inline(always)]
     pub fn size(&self) -> Scalar {
         self.transform.size
-    }
-
-    #[inline(always)]
-    pub fn collider(&self) -> &Collider<N> {
-        &self.intrinsic.collider
     }
 
     #[inline(always)]
@@ -249,7 +232,6 @@ pub struct ObjectID(pub(crate) usize);
 pub struct IntrinsicProperty<const N: usize> {
     pub mass: Scalar,
     pub charge: Scalar,
-    pub collider: Collider<N>,
     pub attributes: ObjectAttributes,
     #[cfg(feature = "simulation")]
     pub color: Color,
@@ -257,59 +239,24 @@ pub struct IntrinsicProperty<const N: usize> {
 
 impl<const N: usize> IntrinsicProperty<N> {
     #[cfg(not(feature = "simulation"))]
-    pub fn new(mass: Scalar, collider: Collider<N>) -> Result<IntrinsicProperty<N>, UnitError> {
-        Self::check_units(mass, &collider)?;
+    pub fn new(mass: Scalar) -> Result<IntrinsicProperty<N>, UnitError> {
+        mass.get_uniterror(units::kg, "mass")?;
         Ok(Self {
             mass,
-            collider,
             attributes: ObjectAttributes::default(),
             charge: Scalar::zero() * units::C,
         })
     }
 
     #[cfg(feature = "simulation")]
-    pub fn new(
-        mass: Scalar,
-        collider: Collider<N>,
-        color: Color,
-    ) -> Result<IntrinsicProperty<N>, UnitError> {
-        Self::check_collider_units(mass, &collider)?;
+    pub fn new(mass: Scalar, color: Color) -> Result<IntrinsicProperty<N>, UnitError> {
+        mass.get_uniterror(units::kg, "mass")?;
         Ok(Self {
             mass,
-            collider,
             attributes: ObjectAttributes::default(),
             charge: Scalar::zero() * units::C,
             color,
         })
-    }
-
-    fn check_collider_units(mass: Scalar, collider: &Collider<N>) -> Result<(), UnitError> {
-        mass.get_uniterror(units::kg, "mass")?;
-
-        match collider {
-            Collider::Sphere { radius } => {
-                radius.get_uniterror(units::m, "collider::sphere::radius")?;
-                assert!(radius.value() > 0.0);
-            }
-
-            Collider::Polygon { ref points } => {
-                assert!(points.len() > N);
-                for point in points {
-                    point.get_uniterror(units::Null, "collider::polygon::points")?;
-                }
-            }
-            Collider::Plane { normal } => {
-                normal.get_uniterror(units::Null, "collider::line::normal")?;
-                assert!(normal.magnitude() > 0.0);
-            }
-            Collider::Triangle { a, b, c } => {
-                a.get_uniterror(units::Null, "collider::triange::a")?;
-                b.get_uniterror(units::Null, "collider::triange::a")?;
-                c.get_uniterror(units::Null, "collider::triange::a")?;
-            }
-            Collider::Point => (),
-        }
-        Ok(())
     }
 
     pub fn with_charge(mut self, charge: Scalar) -> Result<IntrinsicProperty<N>, UnitError> {

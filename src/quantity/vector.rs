@@ -38,7 +38,7 @@ impl<const N: usize> Vector<N> {
         self.0.iter().all(|&x| x.abs() <= Float::EPSILON)
     }
 
-    pub fn dot(&self, other: &Vector<N>) -> Scalar {
+    pub fn dot(&self, other: Vector<N>) -> Scalar {
         self.0
             .iter()
             .zip(other.0.iter())
@@ -91,11 +91,15 @@ impl<const N: usize> Vector<N> {
     }
 
     pub fn squared(self) -> Scalar {
-        self.dot(&self)
+        self.dot(self)
     }
 
     pub const fn as_slice(&self) -> &[Float] {
         &self.0
+    }
+
+    pub fn triple_product(self, b: Vector<N>, c: Vector<N>) -> Vector<N> {
+        self.dot(c) * b - self.dot(b) * c
     }
 
     #[track_caller]
@@ -120,11 +124,11 @@ impl<const N: usize> Vector<N> {
         }
     }
 
-    pub fn project(self, on: &Vector<N>) -> Self {
+    pub fn project(self, on: Vector<N>) -> Self {
         self.dot(on) / on.magnitude() * on.normalized()
     }
 
-    pub fn angle_to(&self, other: &Vector<N>) -> Float {
+    pub fn angle_to(&self, other: Vector<N>) -> Float {
         (self.dot(other) / (self.magnitude() * other.magnitude())).acos()
     }
 
@@ -177,7 +181,7 @@ impl Vector<2> {
 }
 
 impl Vector<3> {
-    pub fn cross(&self, other: &Vector<3>) -> Vector<3> {
+    pub fn cross(&self, other: Vector<3>) -> Vector<3> {
         Vector(
             [
                 self.0[1] * other.0[2] - self.0[2] * other.0[1],
@@ -231,8 +235,12 @@ impl Vector<3> {
     }
 
     pub fn rotate(self, q: Quaternion) -> Vector<3> {
-        let t = (2.0 * q.v).cross(&self);
-        self + q.w * t + q.v.cross(&t)
+        let t = (2.0 * q.v).cross(self);
+        self + q.w * t + q.v.cross(t)
+    }
+
+    pub fn scalar_triple_product(self, b: Vector<3>, c: Vector<3>) -> Scalar {
+        self.dot(b.cross(c))
     }
 }
 

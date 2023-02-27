@@ -1,4 +1,4 @@
-use crate::{Float, Quaternion, Scalar, Vector};
+use crate::{Collider, Float, Quaternion, Scalar, Vector};
 
 #[derive(Debug, Clone)]
 pub struct Transform<const N: usize> {
@@ -6,15 +6,24 @@ pub struct Transform<const N: usize> {
     pub(crate) rotation: Rotation,
     pub(crate) shape: ObjectShape<N>,
     pub(crate) size: Scalar,
+    pub(crate) collider: Collider<N>,
 }
 
 impl<const N: usize> Transform<N> {
-    pub fn new(position: Vector<N>, shape: ObjectShape<N>, rotation: Rotation) -> Transform<N> {
+    pub fn new(
+        position: Vector<N>,
+        shape: ObjectShape<N>,
+        rotation: Rotation,
+        collider: bool,
+    ) -> Transform<N> {
         Transform {
             position,
-            shape,
             rotation,
             size: 1.0.into(),
+            collider: collider
+                .then(|| shape.clone().into_collider())
+                .unwrap_or_default(),
+            shape,
         }
     }
 
@@ -47,21 +56,24 @@ impl Rotation {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum ObjectShape<const N: usize> {
     Sphere {
         radius: Scalar,
     },
-    Triangle {
-        a: Vector<N>,
-        b: Vector<N>,
-        c: Vector<N>,
-    },
-    Plane {
-        normal: Vector<N>,
-    },
     Polygon {
         points: Vec<Vector<N>>,
     },
+    #[default]
     Point,
+}
+
+impl<const N: usize> ObjectShape<N> {
+    pub(crate) fn into_collider(self) -> Collider<N> {
+        match self {
+            ObjectShape::Sphere { radius } => Collider::Sphere { radius },
+            ObjectShape::Point => Collider::Point,
+            ObjectShape::Polygon { points } => Collider::Polygon { points },
+        }
+    }
 }

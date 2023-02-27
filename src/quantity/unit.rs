@@ -4,7 +4,7 @@ use std::{
     ops::{Div, Mul},
 };
 
-use crate::{Float, Scalar};
+use crate::{Float, Scalar, Vector};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
@@ -402,5 +402,19 @@ impl Div<Unit> for Float {
     type Output = Scalar;
     fn div(self, rhs: Unit) -> Self::Output {
         Scalar(self, rhs.recip())
+    }
+}
+
+impl<const N: usize> Mul<Unit> for [Float; N] {
+    type Output = Vector<N>;
+    fn mul(self, rhs: Unit) -> Self::Output {
+        Vector(self, rhs)
+    }
+}
+
+impl<const N: usize> Div<Unit> for [Float; N] {
+    type Output = Vector<N>;
+    fn div(self, rhs: Unit) -> Self::Output {
+        Vector(self, rhs.recip())
     }
 }

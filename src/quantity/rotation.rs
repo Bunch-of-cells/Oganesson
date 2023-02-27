@@ -29,7 +29,7 @@ impl Mul for Quaternion {
     fn mul(self, rhs: Self) -> Self::Output {
         Quaternion {
             w: self.w * rhs.w,
-            v: self.v * rhs.w + rhs.v * self.w + self.v.cross(&rhs.v),
+            v: self.v * rhs.w + rhs.v * self.w + self.v.cross(rhs.v),
         }
     }
 }

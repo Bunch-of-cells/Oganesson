@@ -6,9 +6,7 @@ use std::{
 use piston_window::*;
 
 use super::color::*;
-use crate::{
-    field::VectorField, units, Collider, IntrinsicProperty, Object, ObjectShape, Scalar, Vector,
-};
+use crate::{field::VectorField, units, IntrinsicProperty, Object, ObjectShape, Scalar, Vector};
 
 #[derive(Default)]
 pub struct Universe {
@@ -70,11 +68,9 @@ impl Universe {
                     ObjectShape::Sphere {
                         radius: Scalar(20.0, units::m),
                     },
+                    true,
                     IntrinsicProperty::new(
                         Scalar(1.0, units::kg),
-                        Collider::Sphere {
-                            radius: Scalar(20.0, units::m),
-                        },
                         if c.is_sign_negative() { BLUE } else { RED },
                     )
                     .unwrap()
@@ -93,22 +89,18 @@ impl Universe {
 
         for object in self.objects() {
             let color = object.color();
-            let x = object.position();
+            let pos = object.position();
             match object.shape() {
                 &ObjectShape::Sphere { radius } => {
                     let r = radius.value();
-                    let rect = [x[0] - r, x[1] - r, r * 2.0, r * 2.0].map(|a| a);
+                    let rect = [pos[0] - r, pos[1] - r, r * 2.0, r * 2.0].map(|a| a);
                     ellipse(color, rect, ctx.transform, gfx)
                 }
-                &ObjectShape::Triangle { a, b, c } => {
-                    polygon(color, &[a.into(), b.into(), c.into()], ctx.transform, gfx)
-                }
-                ObjectShape::Plane { .. } => todo!(),
                 ObjectShape::Polygon { points } => polygon(
                     color,
                     points
                         .iter()
-                        .map(|&x| x.into())
+                        .map(|&x| (x + pos).into())
                         .collect::<Vec<_>>()
                         .as_slice(),
                     ctx.transform,

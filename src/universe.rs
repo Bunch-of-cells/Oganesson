@@ -66,7 +66,7 @@ impl<const N: usize> Universe<N> {
                             if r.is_zero() {
                                 field
                             } else {
-                                field + charge / r.dot(&r) * r.normalized()
+                                field + charge / r.dot(r) * r.normalized()
                             }
                         },
                     )
@@ -119,7 +119,7 @@ impl<const N: usize> Universe<N> {
                             if r.is_zero() {
                                 field
                             } else {
-                                field + mass / r.dot(&r) * r.normalized()
+                                field + mass / r.dot(r) * r.normalized()
                             }
                         },
                     )
@@ -136,7 +136,11 @@ impl<const N: usize> Universe<N> {
         for (a, b) in possible_collisions {
             let obj_a = &self.objects[a];
             let obj_b = &self.objects[b];
-            if let Some(normal) = obj_a.is_collision(obj_b) {
+            if let Some(normal) = obj_a.collider().is_collision(
+                obj_a.transform(),
+                obj_b.collider(),
+                obj_b.transform(),
+            ) {
                 collisions.push(Collision {
                     obj_a: ObjectID(a),
                     obj_b: ObjectID(b),
@@ -173,7 +177,7 @@ impl<const N: usize> Universe<N> {
                 .max(b.attributes().restitution_coefficient);
 
             let n = normal.normalized();
-            let j = -(1.0 + e) * (u_a - u_b).dot(&n) / (m_a.recip() + m_b.recip()) * n;
+            let j = -(1.0 + e) * (u_a - u_b).dot(n) / (m_a.recip() + m_b.recip()) * n;
 
             match (a.attributes().is_static, b.attributes().is_static) {
                 (true, true) => (),
