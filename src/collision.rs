@@ -74,66 +74,50 @@ impl<const N: usize> Collider<N> {
                     Some(direction * (r1 + r2 - distance))
                 }
             }
-            (Collider::Polygon { .. }, Collider::Sphere { .. }) => todo!(),
+            (Collider::Polygon { points }, &Collider::Sphere { radius }) => {
+                if gjk(
+                    (transform.position - other_transform.position).normalized(),
+                    |d| {
+                        let s_a = points
+                            .iter()
+                            .map(|&x| transform.rotation.rotate_vec(x * transform.size))
+                            .max_by(|v1, v2| (v1).dot(d).partial_cmp(&v2.dot(d)).unwrap())
+                            .unwrap();
+                        let s_b = radius * transform.size * d;
+                        s_a - s_b
+                    },
+                ) {
+                    println!("Collision");
+                }
+                None
+            }
             (Collider::Sphere { .. }, Collider::Polygon { .. }) => other
                 .is_collision(other_transform, self, transform)
                 .map(|v| -v),
             (Collider::Polygon { points: a }, Collider::Polygon { points: b }) => {
-                let (pos_a, pos_b) = (transform.position, other_transform.position);
-                let mut d = (pos_a - pos_b).normalized();
-
-                let support = |d| {
-                    let s_a = *a
-                        .iter()
-                        .max_by(|&&v1, &&v2| (v1).dot(d).partial_cmp(&v2.dot(d)).unwrap())
-                        .unwrap();
-                    let s_b = *b
-                        .iter()
-                        .max_by(|v1, v2| v1.dot(d).partial_cmp(&v2.dot(d)).unwrap())
-                        .unwrap();
-                    s_a - s_b
-                };
-
-                let s = support(d);
-                if s.is_zero() {
-                    println!("CoLLisoN");
-                    return None;
+                if gjk(
+                    (transform.position - other_transform.position).normalized(),
+                    |d| {
+                        let s_a = a
+                            .iter()
+                            .map(|&x| transform.rotation.rotate_vec(x * transform.size))
+                            .max_by(|v1, v2| (v1).dot(d).partial_cmp(&v2.dot(d)).unwrap())
+                            .unwrap();
+                        let s_b = b
+                            .iter()
+                            .map(|&x| {
+                                other_transform
+                                    .rotation
+                                    .rotate_vec(x * other_transform.size)
+                            })
+                            .max_by(|v1, v2| v1.dot(d).partial_cmp(&v2.dot(d)).unwrap())
+                            .unwrap();
+                        s_a - s_b
+                    },
+                ) {
+                    println!("Collision");
                 }
-                d = -s.normalized();
-                let mut simplex = vec![s];
-
-                loop {
-                    let x = support(d);
-                    if s.is_zero() {
-                        println!("CoLLisoN");
-                        return None;
-                    }
-                    if x.dot(d) < 0.0 {
-                        break None;
-                    }
-                    simplex.push(x);
-                    if simplex.len() == 2 {
-                        let &[y, x, ..] = simplex.as_slice() else {unreachable!()};
-                        let xy = y - x;
-                        d = xy.triple_product(-x, xy).normalized();
-                    } else {
-                        let &[z, y, x, ..] = simplex.as_slice() else {unreachable!()};
-                        let xy = y - x;
-                        let xz = z - x;
-                        let xy_perp = xz.triple_product(xy, xy);
-                        let xz_perp = xy.triple_product(xz, xz);
-                        if xy_perp.dot(-x) > 0.0 {
-                            simplex.remove(0);
-                            d = xy_perp.normalized();
-                        } else if xz_perp.dot(-x) > 0.0 {
-                            simplex.remove(1);
-                            d = xz_perp.normalized();
-                        } else {
-                            println!("CoLLisoN");
-                            return None;
-                        }
-                    }
-                }
+                None
             }
         }
     }
@@ -258,4 +242,44 @@ fn possible_collisions_recursive<const N: usize>(
     }
 
     possible_collisions
+}
+
+fn gjk<const N: usize>(mut d: Vector<N>, support: impl Fn(Vector<N>) -> Vector<N>) -> bool {
+    let s = support(d);
+    if s.is_zero() {
+        return true;
+    }
+    d = -s.normalized();
+    let mut simplex = vec![s];
+
+    loop {
+        let x = support(d);
+        if s.is_zero() {
+            break true;
+        }
+        if x.dot(d) < 0.0 {
+            break false;
+        }
+        simplex.push(x);
+        if simplex.len() == 2 {
+            let &[y, x, ..] = simplex.as_slice() else {unreachable!()};
+            let xy = y - x;
+            d = xy.triple_product(-x, xy).normalized();
+        } else {
+            let &[z, y, x, ..] = simplex.as_slice() else {unreachable!()};
+            let xy = y - x;
+            let xz = z - x;
+            let xy_perp = xz.triple_product(xy, xy);
+            let xz_perp = xy.triple_product(xz, xz);
+            if xy_perp.dot(-x) > 0.0 {
+                simplex.remove(0);
+                d = xy_perp.normalized();
+            } else if xz_perp.dot(-x) > 0.0 {
+                simplex.remove(1);
+                d = xz_perp.normalized();
+            } else {
+                break true;
+            }
+        }
+    }
 }

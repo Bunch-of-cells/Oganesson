@@ -1,4 +1,4 @@
-use crate::{Collider, Float, Quaternion, Scalar, Vector};
+use crate::{Collider, Quaternion, Scalar, Vector};
 
 #[derive(Debug, Clone)]
 pub struct Transform<const N: usize> {
@@ -29,12 +29,12 @@ impl<const N: usize> Transform<N> {
 
 #[derive(Debug, Clone, Copy)]
 pub enum Rotation {
-    Dim2(Float),
+    Dim2(Scalar),
     Dim3(Quaternion),
 }
 
 impl Rotation {
-    pub fn as_2d(&self) -> Option<Float> {
+    pub fn as_2d(&self) -> Option<Scalar> {
         match *self {
             Self::Dim2(θ) => Some(θ),
             _ => None,
@@ -66,7 +66,7 @@ impl Rotation {
 
     pub fn new<const N: usize>() -> Rotation {
         match N {
-            2 => Rotation::Dim2(0.0),
+            2 => Rotation::Dim2(Scalar::zero()),
             3 => Rotation::Dim3(Quaternion::default()),
             _ => panic!(),
         }

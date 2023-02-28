@@ -46,8 +46,11 @@ impl<const N: usize> ObjectBuilder<N> {
         self.mass.get_uniterror(units::kg, "mass")?;
         self.charge.get_uniterror(units::C, "charge")?;
         self.size.get_uniterror(units::Null, "size")?;
-        if let Rotation::Dim3(Quaternion { v, .. }) = self.rotation {
-            v.get_uniterror(units::Null, "quaternion::v")?;
+        match self.rotation {
+            Rotation::Dim3(Quaternion { v, .. }) => {
+                v.get_uniterror(units::Null, "quaternion::v")?
+            }
+            Rotation::Dim2(θ) => θ.get_uniterror(units::Null, "rotation::θ")?,
         }
 
         #[cfg(feature = "relativistic")]
@@ -139,12 +142,6 @@ impl<const N: usize> ObjectBuilder<N> {
     }
 
     #[inline(always)]
-    pub fn with_rotation(mut self, rotation: Rotation) -> Self {
-        self.rotation = rotation;
-        self
-    }
-
-    #[inline(always)]
     pub fn has_collider(mut self, has_collider: bool) -> Self {
         self.collider = has_collider;
         self
@@ -160,6 +157,22 @@ impl<const N: usize> ObjectBuilder<N> {
     #[inline(always)]
     pub fn with_attributes(mut self, attributes: ObjectAttributes) -> Self {
         self.attributes = attributes;
+        self
+    }
+}
+
+impl ObjectBuilder<2> {
+    #[inline(always)]
+    pub fn with_rotation(mut self, θ: Scalar) -> Self {
+        self.rotation = Rotation::Dim2(θ);
+        self
+    }
+}
+
+impl ObjectBuilder<3> {
+    #[inline(always)]
+    pub fn with_rotation(mut self, q: Quaternion) -> Self {
+        self.rotation = Rotation::Dim3(q);
         self
     }
 }
@@ -186,6 +199,9 @@ impl<const N: usize> Object<N> {
         self.transform.position += velocity * dt;
         self.velocity.rotate_left(1);
         self.velocity[3] = velocity;
+        if let Rotation::Dim2(x) = &mut self.transform.rotation {
+            *x += 1.0 * units::deg;
+        }
     }
 
     pub(crate) fn set_velocity(&mut self, velocity: Vector<N>) {

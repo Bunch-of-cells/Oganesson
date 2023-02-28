@@ -93,12 +93,7 @@ impl Universe {
                     color,
                     points
                         .iter()
-                        .map(|&x| {
-                            transform
-                                .rotation
-                                .rotate_vec((x + pos) * transform.size)
-                                .into()
-                        })
+                        .map(|&x| (transform.rotation.rotate_vec(x * transform.size) + pos).into())
                         .collect::<Vec<_>>()
                         .as_slice(),
                     ctx.transform,

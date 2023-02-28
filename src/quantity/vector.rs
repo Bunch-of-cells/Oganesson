@@ -169,7 +169,7 @@ impl Vector<2> {
         }
     }
 
-    pub fn rotate(&self, θ: Float) -> Self {
+    pub fn rotate(&self, θ: Scalar) -> Self {
         Vector(
             [
                 self[0] * θ.cos() - self[1] * θ.sin(),
