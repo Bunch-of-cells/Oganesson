@@ -10,23 +10,6 @@ pub struct Transform<const N: usize> {
 }
 
 impl<const N: usize> Transform<N> {
-    pub fn new(
-        position: Vector<N>,
-        shape: ObjectShape<N>,
-        rotation: Rotation,
-        collider: bool,
-    ) -> Transform<N> {
-        Transform {
-            position,
-            rotation,
-            size: 1.0.into(),
-            collider: collider
-                .then(|| shape.clone().into_collider())
-                .unwrap_or_default(),
-            shape,
-        }
-    }
-
     pub fn position(&self) -> Vector<N> {
         self.position
     }
@@ -51,8 +34,42 @@ pub enum Rotation {
 }
 
 impl Rotation {
-    pub fn new_2d() -> Rotation {
-        Rotation::Dim2(0.0)
+    pub fn as_2d(&self) -> Option<Float> {
+        match *self {
+            Self::Dim2(θ) => Some(θ),
+            _ => None,
+        }
+    }
+
+    pub fn as_3d(&self) -> Option<Quaternion> {
+        match *self {
+            Self::Dim3(q) => Some(q),
+            _ => None,
+        }
+    }
+
+    pub fn rotate_vec<const N: usize>(self, v: Vector<N>) -> Vector<N> {
+        match self {
+            Rotation::Dim2(θ) if N == 2 => v.resize::<2>().rotate(θ).resize(),
+            Rotation::Dim3(q) if N == 3 => v.resize::<3>().rotate(q).resize(),
+            _ => panic!(),
+        }
+    }
+
+    pub fn rotate(&mut self, other: Rotation) {
+        match (self, other) {
+            (Rotation::Dim2(θ), Rotation::Dim2(θ1)) => *θ += θ1,
+            (Rotation::Dim3(q), Rotation::Dim3(q1)) => *q = *q * q1,
+            _ => panic!(),
+        }
+    }
+
+    pub fn new<const N: usize>() -> Rotation {
+        match N {
+            2 => Rotation::Dim2(0.0),
+            3 => Rotation::Dim3(Quaternion::default()),
+            _ => panic!(),
+        }
     }
 }
 

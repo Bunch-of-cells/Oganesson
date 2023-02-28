@@ -1,13 +1,13 @@
 pub mod consts;
 pub mod field;
-pub mod rotation;
+pub mod quaternion;
 pub mod scalar;
 pub mod unit;
 pub mod vector;
 
 pub use consts::*;
 pub use field::{ScalarField, VectorField};
-pub use rotation::Quaternion;
+pub use quaternion::Quaternion;
 pub use scalar::Scalar;
 pub use vector::Vector;
 

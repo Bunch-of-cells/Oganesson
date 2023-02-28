@@ -1,35 +1,58 @@
 use std::fmt::Debug;
 
 use crate::{
-    transform::Rotation, unit::UnitError, units, Collider, Float, ObjectShape, Scalar, Transform,
-    Vector,
+    simulation::color::WHITE, transform::Rotation, unit::UnitError, units, Collider, Float,
+    ObjectShape, Quaternion, Scalar, Transform, Vector,
 };
 
 #[cfg(feature = "simulation")]
 use crate::simulation::Color;
 
-#[derive(Clone)]
-pub struct Object<const N: usize> {
-    velocity: [Vector<N>; 4],
-    intrinsic: IntrinsicProperty<N>,
-    transform: Transform<N>,
+pub struct ObjectBuilder<const N: usize> {
+    velocity: Vector<N>,
+    mass: Scalar,
+    position: Vector<N>,
+    collider: bool,
+    charge: Scalar,
+    #[cfg(feature = "simulation")]
+    color: Color,
+    shape: ObjectShape<N>,
+    size: Scalar,
+    rotation: Rotation,
+    attributes: ObjectAttributes,
 }
 
-impl<const N: usize> Object<N> {
-    pub fn new(
-        position: Vector<N>,
-        velocity: Vector<N>,
-        shape: ObjectShape<N>,
-        collider: bool,
-        intrinsic: IntrinsicProperty<N>,
-    ) -> Result<Object<N>, UnitError> {
-        position.get_uniterror(units::m, "position")?;
-        velocity.get_uniterror(units::m / units::s, "velocity")?;
-        intrinsic.mass.get_uniterror(units::kg, "mass")?;
-        intrinsic.charge.get_uniterror(units::C, "charge")?;
+impl<const N: usize> ObjectBuilder<N> {
+    pub fn new_at(position: Vector<N>) -> Self {
+        ObjectBuilder {
+            position,
+            velocity: Vector::zero() * units::of_velocity,
+            mass: 1.0 * units::kg,
+            collider: true,
+            charge: 0.0 * units::C,
+            shape: ObjectShape::Point,
+            size: 1.0.into(),
+            rotation: Rotation::new::<N>(),
+            attributes: ObjectAttributes::default(),
+            #[cfg(feature = "simulation")]
+            color: WHITE,
+        }
+    }
+
+    pub fn build(self) -> Result<Object<N>, UnitError> {
+        self.position.get_uniterror(units::m, "position")?;
+        self.velocity
+            .get_uniterror(units::m / units::s, "velocity")?;
+        self.mass.get_uniterror(units::kg, "mass")?;
+        self.charge.get_uniterror(units::C, "charge")?;
+        self.size.get_uniterror(units::Null, "size")?;
+        if let Rotation::Dim3(Quaternion { v, .. }) = self.rotation {
+            v.get_uniterror(units::Null, "quaternion::v")?;
+        }
 
         #[cfg(feature = "relativistic")]
-        match velocity
+        match self
+            .velocity
             .magnitude()
             .partial_cmp(&crate::constants::c.value())
         {
@@ -44,7 +67,7 @@ impl<const N: usize> Object<N> {
             ),
         }
 
-        match shape {
+        match self.shape {
             ObjectShape::Sphere { radius } => {
                 radius.get_uniterror(units::m, "collider::sphere::radius")?;
                 assert!(radius.value() > 0.0);
@@ -59,20 +82,96 @@ impl<const N: usize> Object<N> {
             ObjectShape::Point => (),
         }
 
-        let transform = Transform::new(
-            position,
-            shape,
-            if N == 2 { Rotation::new_2d() } else { todo!() },
-            collider,
-        );
+        let transform = Transform {
+            size: self.size,
+            position: self.position,
+            rotation: self.rotation,
+            collider: self
+                .collider
+                .then(|| self.shape.clone().into_collider())
+                .unwrap_or_default(),
+            shape: self.shape,
+        };
+        let intrinsic = IntrinsicProperty {
+            mass: self.mass,
+            charge: self.charge,
+            #[cfg(feature = "simulation")]
+            color: self.color,
+            attributes: self.attributes,
+        };
 
-        Ok(Object {
-            velocity: [velocity; 4],
-            transform,
+        let object = Object {
             intrinsic,
-        })
+            transform,
+            velocity: [self.velocity; 4],
+        };
+        Ok(object)
     }
 
+    #[inline(always)]
+    pub fn with_velocity(mut self, velocity: Vector<N>) -> Self {
+        self.velocity = velocity;
+        self
+    }
+
+    #[inline(always)]
+    pub fn with_mass(mut self, mass: Scalar) -> Self {
+        self.mass = mass;
+        self
+    }
+
+    #[inline(always)]
+    pub fn with_charge(mut self, charge: Scalar) -> Self {
+        self.charge = charge;
+        self
+    }
+
+    #[inline(always)]
+    pub fn with_shape(mut self, shape: ObjectShape<N>) -> Self {
+        self.shape = shape;
+        self
+    }
+
+    #[inline(always)]
+    pub fn with_size(mut self, size: Scalar) -> Self {
+        self.size = size;
+        self
+    }
+
+    #[inline(always)]
+    pub fn with_rotation(mut self, rotation: Rotation) -> Self {
+        self.rotation = rotation;
+        self
+    }
+
+    #[inline(always)]
+    pub fn has_collider(mut self, has_collider: bool) -> Self {
+        self.collider = has_collider;
+        self
+    }
+
+    #[cfg(feature = "simulation")]
+    #[inline(always)]
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.color = color;
+        self
+    }
+
+    #[inline(always)]
+    pub fn with_attributes(mut self, attributes: ObjectAttributes) -> Self {
+        self.attributes = attributes;
+        self
+    }
+}
+
+#[derive(Clone)]
+pub struct Object<const N: usize> {
+    velocity: [Vector<N>; 4],
+    intrinsic: IntrinsicProperty,
+    transform: Transform<N>,
+}
+
+impl<const N: usize> Object<N> {
     pub(crate) fn update(&mut self, dt: Scalar, force: Vector<N>) {
         if self.intrinsic.attributes.is_static {
             return;
@@ -168,7 +267,7 @@ impl<const N: usize> Object<N> {
     }
 
     #[inline(always)]
-    pub fn intrinsic_properties(&self) -> &IntrinsicProperty<N> {
+    pub fn intrinsic_properties(&self) -> &IntrinsicProperty {
         &self.intrinsic
     }
 
@@ -229,46 +328,12 @@ impl<const N: usize> Object<N> {
 pub struct ObjectID(pub(crate) usize);
 
 #[derive(Clone, Debug)]
-pub struct IntrinsicProperty<const N: usize> {
+pub struct IntrinsicProperty {
     pub mass: Scalar,
     pub charge: Scalar,
     pub attributes: ObjectAttributes,
     #[cfg(feature = "simulation")]
     pub color: Color,
-}
-
-impl<const N: usize> IntrinsicProperty<N> {
-    #[cfg(not(feature = "simulation"))]
-    pub fn new(mass: Scalar) -> Result<IntrinsicProperty<N>, UnitError> {
-        mass.get_uniterror(units::kg, "mass")?;
-        Ok(Self {
-            mass,
-            attributes: ObjectAttributes::default(),
-            charge: Scalar::zero() * units::C,
-        })
-    }
-
-    #[cfg(feature = "simulation")]
-    pub fn new(mass: Scalar, color: Color) -> Result<IntrinsicProperty<N>, UnitError> {
-        mass.get_uniterror(units::kg, "mass")?;
-        Ok(Self {
-            mass,
-            attributes: ObjectAttributes::default(),
-            charge: Scalar::zero() * units::C,
-            color,
-        })
-    }
-
-    pub fn with_charge(mut self, charge: Scalar) -> Result<IntrinsicProperty<N>, UnitError> {
-        charge.get_uniterror(units::C, "charge")?;
-        self.charge = charge;
-        Ok(self)
-    }
-
-    pub fn with_attributes(mut self, attributes: ObjectAttributes) -> IntrinsicProperty<N> {
-        self.attributes = attributes;
-        self
-    }
 }
 
 #[derive(Clone, Debug)]

@@ -13,7 +13,7 @@ pub mod transform;
 pub mod universe;
 
 pub use collision::Collider;
-pub use object::{IntrinsicProperty, Object, ObjectAttributes, ObjectID};
+pub use object::{IntrinsicProperty, Object, ObjectAttributes, ObjectBuilder, ObjectID};
 pub use quantity::*;
 pub use transform::{ObjectShape, Transform};
 pub use universe::Universe;

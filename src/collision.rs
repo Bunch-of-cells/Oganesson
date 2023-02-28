@@ -15,12 +15,16 @@ pub enum Collider<const N: usize> {
 impl<const N: usize> Collider<N> {
     pub fn get_bounding_box(&self, transform: &Transform<N>) -> BoundingBox<N> {
         match self {
-            Collider::Sphere { radius } => {
+            &Collider::Sphere { radius } => {
                 let position = transform.position;
                 let mut min = position;
-                min.0.iter_mut().for_each(|a| *a -= radius.value());
+                min.0
+                    .iter_mut()
+                    .for_each(|a| *a -= (radius * transform.size).value());
                 let mut max = position;
-                max.0.iter_mut().for_each(|a| *a += radius.value());
+                max.0
+                    .iter_mut()
+                    .for_each(|a| *a += (radius * transform.size).value());
                 BoundingBox { min, max }
             }
             Collider::Polygon { points } => {
@@ -28,7 +32,8 @@ impl<const N: usize> Collider<N> {
                 for i in 0..N {
                     let mut min = points.first().unwrap()[i];
                     let mut max = points.first().unwrap()[i];
-                    for point in points {
+                    for &point in points {
+                        let point = transform.rotation.rotate_vec(point * transform.size);
                         if point[i] > max {
                             max = point[i];
                         } else if point[i] < min {

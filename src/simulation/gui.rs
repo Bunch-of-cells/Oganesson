@@ -6,7 +6,7 @@ use std::{
 use piston_window::*;
 
 use super::color::*;
-use crate::{field::VectorField, units, IntrinsicProperty, Object, ObjectShape, Scalar, Vector};
+use crate::{field::VectorField, object::ObjectBuilder, units, ObjectShape, Scalar, Vector};
 
 #[derive(Default)]
 pub struct Universe {
@@ -62,22 +62,14 @@ impl Universe {
 
         if let Some(c) = c {
             self.universe.add_object(
-                Object::new(
-                    Vector::from(self.mouse_pos.map(|a| a)) * units::m,
-                    Vector([0.0, 0.0], units::m / units::s),
-                    ObjectShape::Sphere {
+                ObjectBuilder::new_at(Vector::from(self.mouse_pos.map(|a| a)) * units::m)
+                    .with_shape(ObjectShape::Sphere {
                         radius: Scalar(20.0, units::m),
-                    },
-                    true,
-                    IntrinsicProperty::new(
-                        Scalar(1.0, units::kg),
-                        if c.is_sign_negative() { BLUE } else { RED },
-                    )
-                    .unwrap()
-                    .with_charge(Scalar(c, units::C))
+                    })
+                    .with_color(if c.is_sign_negative() { BLUE } else { RED })
+                    .with_charge(c * units::C)
+                    .build()
                     .unwrap(),
-                )
-                .unwrap(),
             );
         }
     }
@@ -90,9 +82,10 @@ impl Universe {
         for object in self.objects() {
             let color = object.color();
             let pos = object.position();
-            match object.shape() {
+            let transform = object.transform();
+            match &transform.shape {
                 &ObjectShape::Sphere { radius } => {
-                    let r = radius.value();
+                    let r = (radius * transform.size).value();
                     let rect = [pos[0] - r, pos[1] - r, r * 2.0, r * 2.0].map(|a| a);
                     ellipse(color, rect, ctx.transform, gfx)
                 }
@@ -100,7 +93,12 @@ impl Universe {
                     color,
                     points
                         .iter()
-                        .map(|&x| (x + pos).into())
+                        .map(|&x| {
+                            transform
+                                .rotation
+                                .rotate_vec((x + pos) * transform.size)
+                                .into()
+                        })
                         .collect::<Vec<_>>()
                         .as_slice(),
                     ctx.transform,

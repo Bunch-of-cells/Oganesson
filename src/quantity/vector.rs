@@ -7,7 +7,7 @@ use std::{
 use piston_window::types::Vec2d;
 
 use crate::{
-    rotation::Quaternion,
+    quaternion::Quaternion,
     unit::{Unit, UnitError},
     units::Null,
     Float, Scalar,
