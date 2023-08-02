@@ -5,12 +5,20 @@ use crate::{
 
 pub struct Universe<const N: usize> {
     objects: Vec<Object<N>>,
+    electric_fields: Vec<(Scalar, VectorField<'static, N>)>,
+    gravitational_field: VectorField<'static, N>,
 }
 
 impl<const N: usize> Universe<N> {
     pub fn new() -> Universe<N> {
         Universe {
             objects: Vec::new(),
+            electric_fields: vec![],
+            gravitational_field: (
+                |_| Vector::zero() * units::N / units::kg,
+                units::N / units::kg,
+            )
+                .into(),
         }
     }
 
@@ -41,42 +49,50 @@ impl<const N: usize> Universe<N> {
 
     pub fn step(&mut self, dt: Float) {
         let dt = dt * units::s;
-        let electric = self.electric_field();
+        self.update_electric_field(dt);
+        let field = self.electric_field();
 
         for object in self.objects.iter_mut() {
-            let force = electric.at(object.position()).unwrap() * object.charge();
+            let force = field.at(object.position()).unwrap() * object.charge();
+            dbg!(&force, dt);
             object.update(dt, force);
         }
         self.resolve_collisions(dt);
     }
 
-    pub fn electric_field(&self) -> VectorField<'static, N> {
+    pub fn update_electric_field(&mut self, dt: Scalar) {
         let charge_pos = self
             .objects
             .iter()
             .map(|object| (object.charge(), object.position()))
             .collect::<Vec<_>>();
-        (
-            move |x: Vector<N>| {
-                constants::k_e()
-                    * charge_pos.iter().fold(
-                        Vector::zero() * units::N / units::C / constants::k_e().unit(),
-                        |field, &(charge, pos)| {
-                            let r = x - pos;
-                            if r.is_zero() {
-                                field
-                            } else {
-                                field + charge / r.dot(r) * r.normalized()
-                            }
-                        },
-                    )
-            },
-            units::N / units::C,
-        )
-            .into()
+        for (t, _) in &mut self.electric_fields {
+            *t += dt;
+        }
+        self.electric_fields.push((
+            dt,
+            (
+                move |x: Vector<N>| {
+                    constants::k_e()
+                        * charge_pos.iter().fold(
+                            Vector::zero() * units::N / units::C / constants::k_e().unit(),
+                            |field, &(charge, pos)| {
+                                let r = x - pos;
+                                if r.is_zero() {
+                                    field
+                                } else {
+                                    field + charge / r.dot(r) * r.normalized()
+                                }
+                            },
+                        )
+                },
+                units::N / units::C,
+            )
+                .into(),
+        ));
     }
 
-    pub fn electric_potential(&self) -> ScalarField<'static, N> {
+    pub fn update_electric_potential(&self) -> ScalarField<'static, N> {
         let charge_pos = self
             .objects
             .iter()
@@ -103,30 +119,47 @@ impl<const N: usize> Universe<N> {
     }
 
     /// Classical Newtonian Gravitation
-    pub fn gravitational_field(&self) -> VectorField<'static, N> {
+    pub fn update_gravitational_field(&mut self, dt: Scalar) {
         let mass_pos = self
             .objects
             .iter()
             .map(|object| (object.mass(), object.position()))
             .collect::<Vec<_>>();
-        (
-            move |x: Vector<N>| {
-                constants::G
-                    * mass_pos.iter().fold(
-                        Vector::zero() * units::N / units::kg / constants::G.unit(),
-                        |field, &(mass, pos)| {
-                            let r = x - pos;
-                            if r.is_zero() {
-                                field
-                            } else {
-                                field + mass / r.dot(r) * r.normalized()
-                            }
-                        },
-                    )
-            },
-            units::N / units::kg,
+        self.gravitational_field
+            .impose(
+                dt * constants::c,
+                (
+                    move |x: Vector<N>| {
+                        constants::G
+                            * mass_pos.iter().fold(
+                                Vector::zero() * units::N / units::kg / constants::G.unit(),
+                                |field, &(mass, pos)| {
+                                    let r = x - pos;
+                                    if r.is_zero() {
+                                        field
+                                    } else {
+                                        field + mass / r.dot(r) * r.normalized()
+                                    }
+                                },
+                            )
+                    },
+                    units::N / units::kg,
+                )
+                    .into(),
+            )
+            .unwrap();
+    }
+
+    pub fn electric_field(&self) -> VectorField<'static, N> {
+        let mut field: VectorField<'static, N> = (
+            |_| Vector::zero() * units::N / units::C,
+            units::N / units::C,
         )
-            .into()
+            .into();
+        for (t, new) in &self.electric_fields {
+            field.impose(*t * constants::c, new.clone()).unwrap();
+        }
+        field
     }
 
     fn find_collisions(&self) -> Vec<Collision<N>> {

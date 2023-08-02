@@ -110,6 +110,25 @@ impl<const N: usize> VectorField<'_, N> {
         self.unit
     }
 
+    #[track_caller]
+    pub fn impose(&mut self, s: Scalar, new: Self) -> Result<(), UnitError> {
+        if self.unit != new.unit {
+            panic!(
+                "Cannot impose a vector field of units {} on a vector field of unit {}",
+                new.unit, self.unit
+            )
+        }
+        let old = self.field.clone();
+        self.field = Rc::new(move |x: Vector<N>| {
+            if x.squared() < s.squared() {
+                (new.field)(x)
+            } else {
+                old(x)
+            }
+        });
+        Ok(())
+    }
+
     pub fn at(&self, x: Vector<N>) -> Result<Vector<N>, UnitError> {
         x.get_uniterror(units::m, "x")?;
         let at = (self.field)(x);

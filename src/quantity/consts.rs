@@ -114,13 +114,11 @@ pub mod units {
     /// Degree
     pub const deg: Scalar = Scalar(PI / 180.0, rad);
 
-    crate::c! {
-        /// Arcminute
-        pub const arcmin: Scalar = deg / 60.0;
+    /// Arcminute
+    pub const arcmin: Scalar = Scalar(PI / 1080.0, rad);
 
-        /// Arcsecond
-        pub const arcsec: Scalar = arcmin() / 60.0;
-    }
+    /// Arcsecond
+    pub const arcsec: Scalar = Scalar(PI / 6480.0, rad);
 
     /// Hectare
     pub const ha: Scalar = Scalar(10000.0, m.pow(2));
@@ -135,7 +133,7 @@ pub mod units {
     pub const Da: Scalar = Scalar(1.66053906660e-27, kg);
 
     /// Galileo
-    pub const gal: Scalar = Scalar(0.01, m.div(s.pow(2)));
+    pub const Gal: Scalar = Scalar(0.01, m.div(s.pow(2)));
 
     /// Unified Atomic Mass Unit
     pub const u: Scalar = Da;
@@ -151,6 +149,112 @@ pub mod units {
 
     /// ångström
     pub const Å: Scalar = Scalar(1e-10, m);
+
+    // Imperial Units -------------------------------------------------------------------
+
+    /// twip
+    pub const twip: Scalar = Scalar(0.0000176389, m);
+
+    /// thou
+    pub const th: Scalar = Scalar(0.0000254, m);
+
+    /// barleycorn
+    pub const barleycorn: Scalar = Scalar(0.0084667, m);
+
+    /// inch
+    pub const inch: Scalar = Scalar(0.0254, m);
+
+    /// hand
+    pub const hh: Scalar = Scalar(0.1016, m);
+
+    /// foot
+    pub const ft: Scalar = Scalar(0.3048, m);
+
+    /// yard
+    pub const yd: Scalar = Scalar(0.9144, m);
+
+    /// chain
+    pub const ch: Scalar = Scalar(20.1168, m);
+
+    /// furlong
+    pub const fur: Scalar = Scalar(201.168, m);
+
+    /// mile
+    pub const mi: Scalar = Scalar(1609.344, m);
+
+    /// league
+    pub const lea: Scalar = Scalar(4828.032, m);
+
+    /// fanthom
+    pub const ftm: Scalar = Scalar(1.852, m);
+
+    /// cable
+    pub const calbe: Scalar = Scalar(185.2, m);
+
+    /// nautical mile
+    pub const nmi: Scalar = Scalar(1852.0, m);
+
+    /// link
+    pub const link: Scalar = Scalar(0.201168, m);
+
+    /// rod
+    pub const rod: Scalar = Scalar(5.0292, m);
+
+    /// perch
+    pub const perch: Scalar = Scalar(25.29285264, m.pow(2));
+
+    /// rood
+    pub const rood: Scalar = Scalar(1011.7141056, m.pow(2));
+
+    /// acre
+    pub const acre: Scalar = Scalar(4046.8564224, m.pow(2));
+
+    /// square mile
+    pub const sq_mi: Scalar = Scalar(2589988.110336, m.pow(2));
+
+    /// fluid ounce
+    pub const fl_oz: Scalar = Scalar(28.4130625e-6, m.pow(3));
+
+    /// gill
+    pub const gi: Scalar = Scalar(142.0653125e-6, m.pow(3));
+
+    /// pint
+    pub const pt: Scalar = Scalar(568.26125e-6, m.pow(3));
+
+    /// quart
+    pub const qt: Scalar = Scalar(1136.5225e-6, m.pow(3));
+
+    /// gallon
+    pub const gal: Scalar = Scalar(4546.09e-6, m.pow(3));
+
+    /// grain
+    pub const gr: Scalar = Scalar(64.79891e-6, kg);
+
+    /// drachm
+    pub const dr: Scalar = Scalar(1.7718451953125e-3, kg);
+
+    /// ounce
+    pub const oz: Scalar = Scalar(28.349523125e-3, kg);
+
+    /// pound
+    pub const lb: Scalar = Scalar(0.45359237, kg);
+
+    /// stone
+    pub const st: Scalar = Scalar(6.35029318, kg);
+
+    /// qaurter
+    pub const qtr: Scalar = Scalar(12.70058636, kg);
+
+    /// hundredweight
+    pub const cwt: Scalar = Scalar(50.80234544, kg);
+
+    /// ton
+    pub const ton: Scalar = Scalar(1016.0469088, kg);
+
+    /// slug
+    pub const slug: Scalar = Scalar(14.59390294, kg);
+
+    // ----------------------------------------------------------------------------------
 
     pub const of_velocity: Unit = m.div(s);
     pub const of_acceleration: Unit = m.div(s.pow(2));
@@ -243,10 +347,11 @@ pub mod constants {
     // SI-UNITS-----------------------------------------------------------------
 
     /// speed of light in vacuum
-    pub const c: Scalar = Scalar(299792458.0, m.div(s));
+    // pub const c: Scalar = Scalar(299792458.0, m.div(s));
+    pub const c: Scalar = Scalar(1000.0, m.div(s));
 
     /// Planck constant
-    pub const h: Scalar = Scalar(6.62607015e-34, J.div(Hz));
+    pub const h: Scalar = Scalar(6.62607015e-34, J.mul(s));
 
     /// Hyperfine transition frequency of 133Cs
     pub const ΔνCs: Scalar = Scalar(9192631770.0, Hz);

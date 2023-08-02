@@ -107,8 +107,8 @@ impl Universe {
     fn draw_field(&self, ctx: &Context, gfx: &mut G2d) {
         let [w, h] = ctx.get_view_size();
 
-        let field = self.universe.electric_potential();
-        let field = -field.gradient();
+        let field = self.universe.electric_field();
+        // let field = -field.gradient();
 
         for i in (0..w as u32).step_by(50) {
             for j in (0..h as u32).step_by(50) {
