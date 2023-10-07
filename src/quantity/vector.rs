@@ -3,11 +3,9 @@ use std::{
     ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Neg, Sub, SubAssign},
 };
 
-#[cfg(feature = "simulation")]
 use piston_window::types::Vec2d;
 
 use crate::{
-    quaternion::Quaternion,
     unit::{Unit, UnitError},
     units::Null,
     Float, Scalar,
@@ -234,11 +232,6 @@ impl Vector<3> {
         Self::from_spherical_coords(r * ρ.unit(), θ, φ)
     }
 
-    pub fn rotate(self, q: Quaternion) -> Vector<3> {
-        let t = (2.0 * q.v).cross(self);
-        self + q.w * t + q.v.cross(t)
-    }
-
     pub fn scalar_triple_product(self, b: Vector<3>, c: Vector<3>) -> Scalar {
         self.dot(b.cross(c))
     }
@@ -417,7 +410,6 @@ impl<const T: usize> Div<Unit> for Vector<T> {
     }
 }
 
-#[cfg(feature = "simulation")]
 impl From<Vector<2>> for Vec2d<f64> {
     fn from(v: Vector<2>) -> Vec2d<f64> {
         v.0

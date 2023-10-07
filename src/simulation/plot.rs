@@ -26,7 +26,6 @@ pub fn main() {
             .axis_desc_style(("sans-serif", 15))
             .draw()?;
 
-
         cc.configure_series_labels()
             .background_style(&WHITE.mix(0.8))
             .border_style(&BLACK)

@@ -1,6 +1,5 @@
 pub mod consts;
 pub mod field;
-pub mod quaternion;
 pub mod scalar;
 pub mod tensor;
 pub mod unit;
@@ -8,7 +7,6 @@ pub mod vector;
 
 pub use consts::*;
 pub use field::{ScalarField, VectorField};
-pub use quaternion::Quaternion;
 pub use scalar::Scalar;
 pub use tensor::Tensor;
 pub use vector::Vector;

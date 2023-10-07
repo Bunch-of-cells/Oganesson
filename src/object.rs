@@ -1,24 +1,16 @@
 use std::fmt::Debug;
 
-use crate::{
-    simulation::color::WHITE, transform::Rotation, unit::UnitError, units, Collider, Float,
-    ObjectShape, Quaternion, Scalar, Transform, Vector,
-};
+use crate::{simulation::color::WHITE, unit::UnitError, units, Float, Scalar, Vector};
 
-#[cfg(feature = "simulation")]
 use crate::simulation::Color;
 
 pub struct ObjectBuilder<const N: usize> {
     velocity: Vector<N>,
     mass: Scalar,
     position: Vector<N>,
-    collider: bool,
     charge: Scalar,
-    #[cfg(feature = "simulation")]
     color: Color,
-    shape: ObjectShape<N>,
     size: Scalar,
-    rotation: Rotation,
     attributes: ObjectAttributes,
 }
 
@@ -28,13 +20,9 @@ impl<const N: usize> ObjectBuilder<N> {
             position,
             velocity: Vector::zero() * units::of_velocity,
             mass: 1.0 * units::kg,
-            collider: true,
             charge: 0.0 * units::C,
-            shape: ObjectShape::Point,
-            size: 1.0.into(),
-            rotation: Rotation::new::<N>(),
+            size: 1.0 * units::m,
             attributes: ObjectAttributes::default(),
-            #[cfg(feature = "simulation")]
             color: WHITE,
         }
     }
@@ -45,69 +33,22 @@ impl<const N: usize> ObjectBuilder<N> {
             .get_uniterror(units::m / units::s, "velocity")?;
         self.mass.get_uniterror(units::kg, "mass")?;
         self.charge.get_uniterror(units::C, "charge")?;
-        self.size.get_uniterror(units::Null, "size")?;
-        match self.rotation {
-            Rotation::Dim3(Quaternion { v, .. }) => {
-                v.get_uniterror(units::Null, "quaternion::v")?
-            }
-            Rotation::Dim2(θ) => θ.get_uniterror(units::Null, "rotation::θ")?,
-        }
+        self.size.get_uniterror(units::m, "size")?;
 
-        #[cfg(feature = "relativistic")]
-        match self
-            .velocity
-            .magnitude()
-            .partial_cmp(&crate::constants::c.value())
-        {
-            Some(std::cmp::Ordering::Equal) => assert!(
-                mass.value() == 0.0,
-                "Cannot have non zero mass for a particle travelling at light speed"
-            ),
-            Some(std::cmp::Ordering::Greater) => panic!("Cannot travel faster than light"),
-            _ => assert!(
-                mass.value() != 0.0,
-                "Cannot have zero mass for a particle below light speed"
-            ),
-        }
-
-        match self.shape {
-            ObjectShape::Sphere { radius } => {
-                radius.get_uniterror(units::m, "collider::sphere::radius")?;
-                assert!(radius.value() > 0.0);
-            }
-
-            ObjectShape::Polygon { ref points } => {
-                assert!(points.len() > N);
-                for point in points {
-                    point.get_uniterror(units::m, "collider::polygon::points")?;
-                }
-            }
-            ObjectShape::Point => (),
-        }
-
-        let transform = Transform {
-            size: self.size,
-            position: self.position,
-            rotation: self.rotation,
-            collider: self
-                .collider
-                .then(|| self.shape.clone().into_collider())
-                .unwrap_or_default(),
-            shape: self.shape,
-        };
         let intrinsic = IntrinsicProperty {
             mass: self.mass,
             charge: self.charge,
-            #[cfg(feature = "simulation")]
             color: self.color,
+            size: self.size,
             attributes: self.attributes,
         };
 
         let object = Object {
             intrinsic,
-            transform,
+            position: self.position,
             velocity: [self.velocity; 4],
         };
+
         Ok(object)
     }
 
@@ -130,24 +71,11 @@ impl<const N: usize> ObjectBuilder<N> {
     }
 
     #[inline(always)]
-    pub fn with_shape(mut self, shape: ObjectShape<N>) -> Self {
-        self.shape = shape;
-        self
-    }
-
-    #[inline(always)]
     pub fn with_size(mut self, size: Scalar) -> Self {
         self.size = size;
         self
     }
 
-    #[inline(always)]
-    pub fn has_collider(mut self, has_collider: bool) -> Self {
-        self.collider = has_collider;
-        self
-    }
-
-    #[cfg(feature = "simulation")]
     #[inline(always)]
     pub fn with_color(mut self, color: Color) -> Self {
         self.color = color;
@@ -161,34 +89,15 @@ impl<const N: usize> ObjectBuilder<N> {
     }
 }
 
-impl ObjectBuilder<2> {
-    #[inline(always)]
-    pub fn with_rotation(mut self, θ: Scalar) -> Self {
-        self.rotation = Rotation::Dim2(θ);
-        self
-    }
-}
-
-impl ObjectBuilder<3> {
-    #[inline(always)]
-    pub fn with_rotation(mut self, q: Quaternion) -> Self {
-        self.rotation = Rotation::Dim3(q);
-        self
-    }
-}
-
 #[derive(Clone)]
 pub struct Object<const N: usize> {
     velocity: [Vector<N>; 4],
+    position: Vector<N>,
     intrinsic: IntrinsicProperty,
-    transform: Transform<N>,
 }
 
 impl<const N: usize> Object<N> {
     pub(crate) fn update(&mut self, dt: Scalar, force: Vector<N>) {
-        if self.intrinsic.attributes.is_static {
-            return;
-        }
         let velocity = self.acceleration(force) * dt
             + (self.velocity[0]
                 + 3.0 * self.velocity[1]
@@ -196,55 +105,26 @@ impl<const N: usize> Object<N> {
                 + self.velocity[3])
                 / 8.0;
 
-        self.transform.position += velocity * dt;
+        self.position += velocity * dt;
         self.velocity.rotate_left(1);
         self.velocity[3] = velocity;
-        if let Rotation::Dim2(x) = &mut self.transform.rotation {
-            *x += 1.0 * units::deg;
-        }
     }
 
-    pub(crate) fn set_velocity(&mut self, velocity: Vector<N>) {
-        self.velocity = [velocity; 4];
-    }
-
-    pub(crate) fn set_position(&mut self, position: Vector<N>) {
-        self.transform.position = position;
-    }
-
-    #[cfg(not(feature = "relativistic"))]
     #[inline(always)]
-    pub fn acceleration(&mut self, force: Vector<N>) -> Vector<N> {
-        force / self.mass()
-    }
-
-    #[cfg(feature = "relativistic")]
-    #[inline(always)]
-    pub fn acceleration(&mut self, force: Vector<N>) -> Vector<N> {
+    fn acceleration(&mut self, force: Vector<N>) -> Vector<N> {
         self.inv_lorentz_factor() / self.mass()
-            * (force - force.dot(&self.velocity()) * self.velocity() / crate::constants::c2)
+            * (force - force.dot(self.velocity()) * self.velocity() / crate::constants::c2())
     }
+
+    // Getters
 
     #[inline(always)]
     pub fn velocity(&self) -> Vector<N> {
         self.velocity[3]
     }
 
-    #[cfg(not(feature = "relativistic"))]
     #[inline(always)]
     pub fn mass(&self) -> Scalar {
-        self.intrinsic.mass
-    }
-
-    #[cfg(feature = "relativistic")]
-    #[inline(always)]
-    pub fn mass(&self) -> Scalar {
-        self.intrinsic.mass * self.lorentz_factor()
-    }
-
-    #[cfg(feature = "relativistic")]
-    #[inline(always)]
-    pub fn rest_mass(&self) -> Scalar {
         self.intrinsic.mass
     }
 
@@ -253,33 +133,13 @@ impl<const N: usize> Object<N> {
     }
 
     #[inline(always)]
-    pub fn transform(&self) -> &Transform<N> {
-        &self.transform
-    }
-
-    #[inline(always)]
     pub fn position(&self) -> Vector<N> {
-        self.transform.position
-    }
-
-    #[inline(always)]
-    pub fn shape(&self) -> &ObjectShape<N> {
-        &self.transform.shape
-    }
-
-    #[inline(always)]
-    pub fn collider(&self) -> &Collider<N> {
-        &self.transform.collider
-    }
-
-    #[inline(always)]
-    pub fn rotation(&self) -> Rotation {
-        self.transform.rotation
+        self.position
     }
 
     #[inline(always)]
     pub fn size(&self) -> Scalar {
-        self.transform.size
+        self.intrinsic.size
     }
 
     #[inline(always)]
@@ -293,19 +153,6 @@ impl<const N: usize> Object<N> {
     }
 
     #[inline(always)]
-    /// KE = p^2 / 2m
-    pub fn kinetic_energy(&self) -> Scalar {
-        self.momentum().squared() / (2.0 * self.mass())
-    }
-
-    #[inline(always)]
-    /// p = mv
-    pub fn momentum(&self) -> Vector<N> {
-        self.mass() * self.velocity[3]
-    }
-
-    #[cfg(feature = "relativistic")]
-    #[inline(always)]
     /// Calculate the lorentz factor (γ)
     pub fn lorentz_factor(&self) -> Scalar {
         if self.velocity[3].is_zero() {
@@ -316,24 +163,21 @@ impl<const N: usize> Object<N> {
         1.0 / den
     }
 
-    #[cfg(feature = "relativistic")]
     #[inline(always)]
     /// Calculate the inverse of lorentz factor (1/γ)
     pub fn inv_lorentz_factor(&self) -> Scalar {
         if self.velocity[3].is_zero() {
             return 1.0.into();
         }
-        (1.0 - (self.velocity[3].squared() / crate::constants::c2)).powf(0.5)
+        (1.0 - (self.velocity[3].squared() / crate::constants::c2())).powf(0.5)
     }
 
-    #[cfg(feature = "relativistic")]
     #[inline(always)]
     /// E = γmc2
     pub fn energy(&self) -> Scalar {
-        self.intrinsic.mass * crate::constants::c2 * self.lorentz_factor()
+        self.intrinsic.mass * crate::constants::c2() * self.lorentz_factor()
     }
 
-    #[cfg(feature = "simulation")]
     #[inline(always)]
     pub fn color(&self) -> Color {
         self.intrinsic.color
@@ -348,20 +192,18 @@ pub struct IntrinsicProperty {
     pub mass: Scalar,
     pub charge: Scalar,
     pub attributes: ObjectAttributes,
-    #[cfg(feature = "simulation")]
+    pub size: Scalar,
     pub color: Color,
 }
 
 #[derive(Clone, Debug)]
 pub struct ObjectAttributes {
-    pub is_static: bool,
     pub restitution_coefficient: Float,
 }
 
 impl Default for ObjectAttributes {
     fn default() -> Self {
         Self {
-            is_static: false,
             restitution_coefficient: 1.0,
         }
     }
@@ -375,11 +217,8 @@ impl<const N: usize> Debug for Object<N> {
             .field("velocity", &self.velocity())
             .field("mass", &self.mass())
             .field("charge", &self.charge())
-            .field("collider", &self.collider())
-            .field("attrs", &self.attributes());
-
-        #[cfg(feature = "simulation")]
-        s.field("color", &self.color());
+            .field("attrs", &self.attributes())
+            .field("color", &self.color());
 
         s.finish()
     }

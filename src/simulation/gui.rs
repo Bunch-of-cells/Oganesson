@@ -6,7 +6,7 @@ use std::{
 use piston_window::*;
 
 use super::color::*;
-use crate::{field::VectorField, object::ObjectBuilder, units, ObjectShape, Scalar, Vector};
+use crate::{field::VectorField, object::ObjectBuilder, units, Vector};
 
 #[derive(Default)]
 pub struct Universe {
@@ -63,9 +63,7 @@ impl Universe {
         if let Some(c) = c {
             self.universe.add_object(
                 ObjectBuilder::new_at(Vector::from(self.mouse_pos.map(|a| a)) * units::m)
-                    .with_shape(ObjectShape::Sphere {
-                        radius: Scalar(20.0, units::m),
-                    })
+                    .with_size(20.0 * units::m)
                     .with_color(if c.is_sign_negative() { BLUE } else { RED })
                     .with_charge(c * units::C)
                     .build()
@@ -75,32 +73,16 @@ impl Universe {
     }
 
     fn draw(&mut self, ctx: Context, gfx: &mut G2d) {
-        clear([0.0; 4], gfx);
+        clear([0.0, 0.0, 0.0, 1.0], gfx);
 
         self.draw_field(&ctx, gfx);
 
         for object in self.objects() {
             let color = object.color();
             let pos = object.position();
-            let transform = object.transform();
-            match &transform.shape {
-                &ObjectShape::Sphere { radius } => {
-                    let r = (radius * transform.size).value();
-                    let rect = [pos[0] - r, pos[1] - r, r * 2.0, r * 2.0].map(|a| a);
-                    ellipse(color, rect, ctx.transform, gfx)
-                }
-                ObjectShape::Polygon { points } => polygon(
-                    color,
-                    points
-                        .iter()
-                        .map(|&x| (transform.rotation.rotate_vec(x * transform.size) + pos).into())
-                        .collect::<Vec<_>>()
-                        .as_slice(),
-                    ctx.transform,
-                    gfx,
-                ),
-                ObjectShape::Point => (),
-            };
+            let r = object.size().value();
+            let rect = [pos[0] - r, pos[1] - r, r * 2.0, r * 2.0].map(|a| a);
+            ellipse(color, rect, ctx.transform, gfx)
         }
     }
 
