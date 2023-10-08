@@ -1,2 +1,3 @@
 # Oganesson
-Another physics engine
+
+A Relativistic Physics Simulator

@@ -71,7 +71,7 @@ impl<const N: usize> Universe<N> {
                 move |x: Vector<N>| {
                     constants::k_e()
                         * charge_pos.iter().fold(
-                            Vector::zero() * units::N / units::C / constants::k_e().unit(),
+                            Vector::zero() * units::N / units::C / constants::k_e().dim(),
                             |field, &(charge, pos)| {
                                 let r = x - pos;
                                 if r.is_zero() {
@@ -101,7 +101,7 @@ impl<const N: usize> Universe<N> {
                     move |x: Vector<N>| {
                         constants::G
                             * mass_pos.iter().fold(
-                                Vector::zero() * units::N / units::kg / constants::G.unit(),
+                                Vector::zero() * units::N / units::kg / constants::G.dim(),
                                 |field, &(mass, pos)| {
                                     let r = x - pos;
                                     if r.is_zero() {

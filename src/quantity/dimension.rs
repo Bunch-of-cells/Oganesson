@@ -62,7 +62,7 @@ pub enum SIPrefix {
 impl Mul<Float> for SIPrefix {
     type Output = Scalar;
     fn mul(self, rhs: Float) -> Self::Output {
-        Scalar(rhs * Float::powi(10.0, self as _), Unit::NONE)
+        Scalar(rhs * Float::powi(10.0, self as _), Dimension::NONE)
     }
 }
 
@@ -74,7 +74,7 @@ impl Mul<SIPrefix> for Float {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Unit {
+pub struct Dimension {
     pub time: i32,
     pub length: i32,
     pub mass: i32,
@@ -84,8 +84,8 @@ pub struct Unit {
     pub luminous_intensity: i32,
 }
 
-impl Unit {
-    pub const NONE: Unit = Unit {
+impl Dimension {
+    pub const NONE: Dimension = Dimension {
         length: 0,
         mass: 0,
         time: 0,
@@ -96,7 +96,7 @@ impl Unit {
     };
 
     /// time
-    pub const T: Unit = Unit {
+    pub const T: Dimension = Dimension {
         length: 0,
         mass: 0,
         time: 1,
@@ -107,7 +107,7 @@ impl Unit {
     };
 
     /// length
-    pub const L: Unit = Unit {
+    pub const L: Dimension = Dimension {
         length: 1,
         mass: 0,
         time: 0,
@@ -118,7 +118,7 @@ impl Unit {
     };
 
     /// mass
-    pub const M: Unit = Unit {
+    pub const M: Dimension = Dimension {
         length: 0,
         mass: 1,
         time: 0,
@@ -129,7 +129,7 @@ impl Unit {
     };
 
     /// electric current
-    pub const I: Unit = Unit {
+    pub const I: Dimension = Dimension {
         length: 0,
         mass: 0,
         time: 0,
@@ -140,7 +140,7 @@ impl Unit {
     };
 
     /// absolute temperature
-    pub const Θ: Unit = Unit {
+    pub const Θ: Dimension = Dimension {
         length: 0,
         mass: 0,
         time: 0,
@@ -151,7 +151,7 @@ impl Unit {
     };
 
     /// amount of substance
-    pub const N: Unit = Unit {
+    pub const N: Dimension = Dimension {
         length: 0,
         mass: 0,
         time: 0,
@@ -162,7 +162,7 @@ impl Unit {
     };
 
     /// luminous intensity
-    pub const J: Unit = Unit {
+    pub const J: Dimension = Dimension {
         length: 0,
         mass: 0,
         time: 0,
@@ -172,8 +172,8 @@ impl Unit {
         luminous_intensity: 1,
     };
 
-    pub const fn mul(self, rhs: Self) -> Unit {
-        Unit {
+    pub const fn mul(self, rhs: Self) -> Dimension {
+        Dimension {
             length: self.length + rhs.length,
             mass: self.mass + rhs.mass,
             time: self.time + rhs.time,
@@ -185,8 +185,8 @@ impl Unit {
         }
     }
 
-    pub const fn div(self, rhs: Self) -> Unit {
-        Unit {
+    pub const fn div(self, rhs: Self) -> Dimension {
+        Dimension {
             length: self.length - rhs.length,
             mass: self.mass - rhs.mass,
             time: self.time - rhs.time,
@@ -198,8 +198,8 @@ impl Unit {
         }
     }
 
-    pub const fn pow(self, exp: i32) -> Unit {
-        Unit {
+    pub const fn pow(self, exp: i32) -> Dimension {
+        Dimension {
             length: self.length * exp,
             mass: self.mass * exp,
             time: self.time * exp,
@@ -211,7 +211,7 @@ impl Unit {
     }
 
     #[inline(always)]
-    pub fn radical(self, exp: i32) -> Unit {
+    pub fn radical(self, exp: i32) -> Dimension {
         if [
             self.length,
             self.mass,
@@ -222,12 +222,12 @@ impl Unit {
             self.luminous_intensity,
         ]
         .iter()
-        .any(|&unit| unit % exp != 0)
+        .any(|&dimension| dimension % exp != 0)
         {
             panic!("Can't");
         }
 
-        Unit {
+        Dimension {
             length: self.length / exp,
             mass: self.mass / exp,
             time: self.time / exp,
@@ -238,8 +238,8 @@ impl Unit {
         }
     }
 
-    pub const fn recip(self) -> Unit {
-        Unit {
+    pub const fn inv(self) -> Dimension {
+        Dimension {
             length: -self.length,
             mass: -self.mass,
             time: -self.time,
@@ -253,7 +253,7 @@ impl Unit {
     pub fn dimentional_formula(&self) -> String {
         let mut out = String::new();
 
-        let units = [
+        let dimensions = [
             ("T", self.time),
             ("L", self.length),
             ("M", self.mass),
@@ -263,15 +263,15 @@ impl Unit {
             ("J", self.luminous_intensity),
         ];
 
-        units
+        dimensions
             .into_iter()
             .filter(|&(_, exp)| exp != 0)
-            .try_for_each(|(unit, exp)| {
-                let unit = match exp {
-                    1 => unit.to_string(),
-                    _ => format!("{}^{}", unit, exp),
+            .try_for_each(|(dimension, exp)| {
+                let dimension = match exp {
+                    1 => dimension.to_string(),
+                    _ => format!("{}^{}", dimension, exp),
                 };
-                write!(out, "{} ", unit)
+                write!(out, "{} ", dimension)
             })
             .unwrap();
 
@@ -279,29 +279,29 @@ impl Unit {
     }
 }
 
-impl Mul for Unit {
-    type Output = Unit;
+impl Mul for Dimension {
+    type Output = Dimension;
 
     fn mul(self, rhs: Self) -> Self::Output {
         self.mul(rhs)
     }
 }
 
-impl Div for Unit {
-    type Output = Unit;
+impl Div for Dimension {
+    type Output = Dimension;
 
     fn div(self, rhs: Self) -> Self::Output {
         self.div(rhs)
     }
 }
 
-impl Default for Unit {
+impl Default for Dimension {
     fn default() -> Self {
-        Unit::NONE
+        Dimension::NONE
     }
 }
 
-impl Display for Unit {
+impl Display for Dimension {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self == &Self::NONE {
             return Ok(());
@@ -309,112 +309,116 @@ impl Display for Unit {
 
         let mut out = String::new();
 
-        let mut units = [
-            ("s", self.time),
-            ("m", self.length),
-            ("kg", self.mass),
-            ("A", self.electric_current),
-            ("K", self.thermodynamic_temperature),
-            ("mol", self.amount_of_substance),
-            ("cd", self.luminous_intensity),
+        let mut dimensions = [
+            ("T", self.time),
+            ("L", self.length),
+            ("M", self.mass),
+            ("I", self.electric_current),
+            ("Θ", self.thermodynamic_temperature),
+            ("N", self.amount_of_substance),
+            ("J", self.luminous_intensity),
         ];
 
-        units.sort_by_key(|&(_, exp)| -exp);
+        dimensions.sort_by_key(|&(_, exp)| -exp);
 
         let mut denominator = false;
 
-        units
+        dimensions
             .into_iter()
             .filter(|&(_, exp)| exp != 0)
-            .try_for_each(|(unit, exp)| {
-                let unit = match exp {
-                    1 => unit.to_string(),
+            .try_for_each(|(dimension, exp)| {
+                let dimension = match exp {
+                    1 => dimension.to_string(),
                     _ if exp < 0 => {
                         if !denominator {
                             denominator = true;
                             write!(out, "/ ")?;
                         }
                         match exp {
-                            -1 => unit.to_string(),
-                            _ => format!("{}^{}", unit, -exp),
+                            -1 => dimension.to_string(),
+                            _ => format!("{}^{}", dimension, -exp),
                         }
                     }
-                    _ => format!("{}^{}", unit, exp),
+                    _ => format!("{}^{}", dimension, exp),
                 };
-                write!(out, "{} ", unit)
+                write!(out, "{} ", dimension)
             })?;
 
         write!(f, "{}", out.trim_end())
     }
 }
 
-pub struct UnitError(pub String);
+pub struct DimensionError(pub String);
 
-impl UnitError {
-    pub fn new(message: &str) -> UnitError {
-        UnitError(message.to_string())
+impl DimensionError {
+    pub fn new(message: &str) -> DimensionError {
+        DimensionError(message.to_string())
     }
 
-    pub fn expected_unit_of(expected: Unit, found: Unit, var: &str) -> UnitError {
-        UnitError(format!(
-            "Expected unit {} for {}, found {}",
+    pub fn expected_dimension_of(
+        expected: Dimension,
+        found: Dimension,
+        var: &str,
+    ) -> DimensionError {
+        DimensionError(format!(
+            "Expected dimension {} for {}, found {}",
             expected, var, found
         ))
     }
 }
 
-impl Display for UnitError {
+impl Display for DimensionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl Debug for UnitError {
+impl Debug for DimensionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl Error for UnitError {}
+impl Error for DimensionError {}
 
-impl Mul<Float> for Unit {
+impl Mul<Float> for Dimension {
     type Output = Scalar;
     fn mul(self, rhs: Float) -> Self::Output {
         Scalar(rhs, self)
     }
 }
 
-impl Div<Float> for Unit {
+impl Div<Float> for Dimension {
     type Output = Scalar;
     fn div(self, rhs: Float) -> Self::Output {
-        Scalar(rhs, self.recip())
+        Scalar(rhs, self.inv())
     }
 }
 
-impl Mul<Unit> for Float {
+impl Mul<Dimension> for Float {
     type Output = Scalar;
-    fn mul(self, rhs: Unit) -> Self::Output {
+    fn mul(self, rhs: Dimension) -> Self::Output {
         Scalar(self, rhs)
     }
 }
 
-impl Div<Unit> for Float {
+impl Div<Dimension> for Float {
     type Output = Scalar;
-    fn div(self, rhs: Unit) -> Self::Output {
-        Scalar(self, rhs.recip())
+    fn div(self, rhs: Dimension) -> Self::Output {
+        Scalar(self, rhs.inv())
     }
 }
 
-impl<const N: usize> Mul<Unit> for [Float; N] {
+impl<const N: usize> Mul<Dimension> for [Float; N] {
     type Output = Vector<N>;
-    fn mul(self, rhs: Unit) -> Self::Output {
+    fn mul(self, rhs: Dimension) -> Self::Output {
         Vector(self, rhs)
     }
 }
 
-impl<const N: usize> Div<Unit> for [Float; N] {
+impl<const N: usize> Div<Dimension> for [Float; N] {
     type Output = Vector<N>;
-    fn div(self, rhs: Unit) -> Self::Output {
-        Vector(self, rhs.recip())
+    fn div(self, rhs: Dimension) -> Self::Output {
+        Vector(self, rhs.inv())
     }
 }

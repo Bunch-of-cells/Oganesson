@@ -107,10 +107,10 @@ impl Universe {
         x: f64,
         y: f64,
     ) {
-        let g = field.at(Vector([x, y], units::m)).unwrap();
+        let g = field.at([x, y] * units::m).unwrap();
 
         let p = if g.magnitude().is_zero() || g.0.iter().any(|x| x.is_nan()) {
-            Vector([x, y], g.unit())
+            [x, y] * g.dim()
         } else {
             g.normalized() * (g.magnitude()).atan() * 10.0 + Vector::from([x, y])
         };

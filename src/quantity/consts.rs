@@ -2,418 +2,330 @@
 #![allow(clippy::excessive_precision)]
 
 pub mod units {
-    use crate::unit::Unit;
+    use crate::dimension::Dimension;
     use crate::Scalar;
     use std::f64::consts::PI;
 
     /// Kilogram
-    pub const kg: Unit = Unit::M;
+    pub const kg: Scalar = Scalar(1.0, Dimension::M);
 
     /// Meter
-    pub const m: Unit = Unit::L;
+    pub const m: Scalar = Scalar(1.0, Dimension::L);
 
     /// Second
-    pub const s: Unit = Unit::T;
+    pub const s: Scalar = Scalar(1.0, Dimension::T);
 
     /// Ampere
-    pub const A: Unit = Unit::I;
+    pub const A: Scalar = Scalar(1.0, Dimension::I);
 
     /// Kelvin
-    pub const K: Unit = Unit::Θ;
+    pub const K: Scalar = Scalar(1.0, Dimension::Θ);
 
     /// Candela
-    pub const cd: Unit = Unit::J;
+    pub const cd: Scalar = Scalar(1.0, Dimension::J);
 
     /// Mole
-    pub const mol: Unit = Unit::N;
-
-    /// Unitless
-    pub const Null: Unit = Unit::NONE;
+    pub const mol: Scalar = Scalar(1.0, Dimension::N);
 
     /// Hertz
-    pub const Hz: Unit = Null.div(s);
+    pub const Hz: Scalar = Scalar(1.0, s.dim().inv());
 
     /// Radian
-    pub const rad: Unit = Null;
+    pub const rad: Scalar = Scalar(1.0, Dimension::NONE);
 
     /// Steradian
-    pub const sr: Unit = Null;
+    pub const sr: Scalar = Scalar(1.0, Dimension::NONE);
 
     /// Newton
-    pub const N: Unit = kg.mul(m).div(s.pow(2));
+    pub const N: Scalar = Scalar(1.0, kg.dim().mul(m.dim()).div(s.dim().pow(2)));
 
     /// Pascal
-    pub const Pa: Unit = N.div(m.pow(2));
+    pub const Pa: Scalar = Scalar(1.0, N.dim().div(m.dim().pow(2)));
 
     /// Joule
-    pub const J: Unit = N.mul(m);
+    pub const J: Scalar = Scalar(1.0, N.dim().mul(m.dim()));
 
     /// Watt
-    pub const W: Unit = J.div(s);
+    pub const W: Scalar = Scalar(1.0, J.dim().div(s.dim()));
 
     /// Coulomb
-    pub const C: Unit = A.mul(s);
+    pub const C: Scalar = Scalar(1.0, A.dim().mul(s.dim()));
 
     /// Volt
-    pub const V: Unit = W.div(A);
+    pub const V: Scalar = Scalar(1.0, W.dim().div(A.dim()));
 
     /// Farad
-    pub const F: Unit = C.div(V);
+    pub const F: Scalar = Scalar(1.0, C.dim().div(V.dim()));
 
     /// Ohm
-    pub const Ω: Unit = V.div(A);
+    pub const Ω: Scalar = Scalar(1.0, V.dim().div(A.dim()));
 
     /// Ohm
-    pub const Ohm: Unit = Ω;
+    pub const Ohm: Scalar = Ω;
 
     /// Siemens
-    pub const S: Unit = Ω.div(A);
+    pub const S: Scalar = Scalar(1.0, Ω.dim().div(A.dim()));
 
     /// Weber
-    pub const Wb: Unit = V.div(Ω);
+    pub const Wb: Scalar = Scalar(1.0, V.dim().div(Ω.dim()));
 
     /// Tesla
-    pub const T: Unit = Wb.div(m.pow(2));
+    pub const T: Scalar = Scalar(1.0, Wb.dim().div(m.dim().pow(2)));
 
     /// Henry
-    pub const H: Unit = Wb.div(A);
+    pub const H: Scalar = Scalar(1.0, Wb.dim().div(A.dim()));
 
     /// Lumen
-    pub const lm: Unit = cd.mul(sr);
+    pub const lm: Scalar = Scalar(1.0, cd.dim().mul(sr.dim()));
 
     /// Lux
-    pub const lx: Unit = lm.div(m.pow(2));
+    pub const lx: Scalar = Scalar(1.0, lm.dim().div(m.dim().pow(2)));
 
     /// Becquerel
-    pub const Bq: Unit = Null.div(s);
+    pub const Bq: Scalar = Hz;
 
     /// Gray
-    pub const Gy: Unit = J.div(kg);
+    pub const Gy: Scalar = Scalar(1.0, J.dim().div(kg.dim()));
 
     /// Sievert
-    pub const Sv: Unit = J.div(kg);
+    pub const Sv: Scalar = Gy;
 
     /// Katal
-    pub const kat: Unit = mol.div(s);
+    pub const kat: Scalar = Scalar(1.0, mol.dim().div(s.dim()));
 
     /// Volt-Ampere Reactive
-    pub const VA: Unit = V.mul(A);
+    pub const VA: Scalar = Scalar(1.0, V.dim().mul(A.dim()));
 
     /// Minute
-    pub const min: Scalar = Scalar(60.0, s);
+    pub const min: Scalar = Scalar(60.0, s.dim());
 
     /// Hour
-    pub const hr: Scalar = Scalar(3600.0, s);
+    pub const hr: Scalar = Scalar(3600.0, s.dim());
 
     /// Day
-    pub const d: Scalar = Scalar(86400.0, s);
+    pub const d: Scalar = Scalar(86400.0, s.dim());
 
     /// Astronomical Unit
-    pub const au: Scalar = Scalar(149597870700.0, m);
+    pub const au: Scalar = Scalar(149597870700.0, m.dim());
 
     /// Degree
-    pub const deg: Scalar = Scalar(PI / 180.0, rad);
+    pub const deg: Scalar = Scalar(PI / 180.0, rad.dim());
 
     /// Arcminute
-    pub const arcmin: Scalar = Scalar(PI / 1080.0, rad);
+    pub const arcmin: Scalar = Scalar(PI / 1080.0, rad.dim());
 
     /// Arcsecond
-    pub const arcsec: Scalar = Scalar(PI / 6480.0, rad);
+    pub const arcsec: Scalar = Scalar(PI / 6480.0, rad.dim());
 
     /// Hectare
-    pub const ha: Scalar = Scalar(10000.0, m.pow(2));
+    pub const ha: Scalar = Scalar(10000.0, m.dim().pow(2));
 
     /// Litre
-    pub const L: Scalar = Scalar(0.001, m.pow(3));
+    pub const L: Scalar = Scalar(0.001, m.dim().pow(3));
 
     /// Tonne
-    pub const t: Scalar = Scalar(1000.0, kg);
+    pub const t: Scalar = Scalar(1000.0, kg.dim());
 
     /// Dalton
-    pub const Da: Scalar = Scalar(1.66053906660e-27, kg);
+    pub const Da: Scalar = Scalar(1.66053906660e-27, kg.dim());
 
     /// Galileo
-    pub const Gal: Scalar = Scalar(0.01, m.div(s.pow(2)));
+    pub const Gal: Scalar = Scalar(0.01, m.dim().div(s.dim().pow(2)));
 
     /// Unified Atomic Mass Unit
     pub const u: Scalar = Da;
 
     /// Parsec
-    pub const pc: Scalar = Scalar(3.0856775814913673e16, m);
+    pub const pc: Scalar = Scalar(3.0856775814913673e16, m.dim());
 
     /// Bar
-    pub const bar: Scalar = Scalar(100000.0, Pa);
+    pub const bar: Scalar = Scalar(100000.0, Pa.dim());
 
     /// Standard Atmosphere
-    pub const atm: Scalar = Scalar(101325.0, Pa);
+    pub const atm: Scalar = Scalar(101325.0, Pa.dim());
 
     /// ångström
-    pub const Å: Scalar = Scalar(1e-10, m);
+    pub const Å: Scalar = Scalar(1e-10, m.dim());
 
     // Imperial Units -------------------------------------------------------------------
 
     /// twip
-    pub const twip: Scalar = Scalar(0.0000176389, m);
+    pub const twip: Scalar = Scalar(0.0000176389, m.dim());
 
     /// thou
-    pub const th: Scalar = Scalar(0.0000254, m);
+    pub const th: Scalar = Scalar(0.0000254, m.dim());
 
     /// barleycorn
-    pub const barleycorn: Scalar = Scalar(0.0084667, m);
+    pub const barleycorn: Scalar = Scalar(0.0084667, m.dim());
 
     /// inch
-    pub const inch: Scalar = Scalar(0.0254, m);
+    pub const inch: Scalar = Scalar(0.0254, m.dim());
 
     /// hand
-    pub const hh: Scalar = Scalar(0.1016, m);
+    pub const hh: Scalar = Scalar(0.1016, m.dim());
 
     /// foot
-    pub const ft: Scalar = Scalar(0.3048, m);
+    pub const ft: Scalar = Scalar(0.3048, m.dim());
 
     /// yard
-    pub const yd: Scalar = Scalar(0.9144, m);
+    pub const yd: Scalar = Scalar(0.9144, m.dim());
 
     /// chain
-    pub const ch: Scalar = Scalar(20.1168, m);
+    pub const ch: Scalar = Scalar(20.1168, m.dim());
 
     /// furlong
-    pub const fur: Scalar = Scalar(201.168, m);
+    pub const fur: Scalar = Scalar(201.168, m.dim());
 
     /// mile
-    pub const mi: Scalar = Scalar(1609.344, m);
+    pub const mi: Scalar = Scalar(1609.344, m.dim());
 
     /// league
-    pub const lea: Scalar = Scalar(4828.032, m);
+    pub const lea: Scalar = Scalar(4828.032, m.dim());
 
     /// fanthom
-    pub const ftm: Scalar = Scalar(1.852, m);
+    pub const ftm: Scalar = Scalar(1.852, m.dim());
 
     /// cable
-    pub const calbe: Scalar = Scalar(185.2, m);
+    pub const calbe: Scalar = Scalar(185.2, m.dim());
 
     /// nautical mile
-    pub const nmi: Scalar = Scalar(1852.0, m);
+    pub const nmi: Scalar = Scalar(1852.0, m.dim());
 
     /// link
-    pub const link: Scalar = Scalar(0.201168, m);
+    pub const link: Scalar = Scalar(0.201168, m.dim());
 
     /// rod
-    pub const rod: Scalar = Scalar(5.0292, m);
+    pub const rod: Scalar = Scalar(5.0292, m.dim());
 
     /// perch
-    pub const perch: Scalar = Scalar(25.29285264, m.pow(2));
+    pub const perch: Scalar = Scalar(25.29285264, m.dim().pow(2));
 
     /// rood
-    pub const rood: Scalar = Scalar(1011.7141056, m.pow(2));
+    pub const rood: Scalar = Scalar(1011.7141056, m.dim().pow(2));
 
     /// acre
-    pub const acre: Scalar = Scalar(4046.8564224, m.pow(2));
+    pub const acre: Scalar = Scalar(4046.8564224, m.dim().pow(2));
 
     /// square mile
-    pub const sq_mi: Scalar = Scalar(2589988.110336, m.pow(2));
+    pub const sq_mi: Scalar = Scalar(2589988.110336, m.dim().pow(2));
 
     /// fluid ounce
-    pub const fl_oz: Scalar = Scalar(28.4130625e-6, m.pow(3));
+    pub const fl_oz: Scalar = Scalar(28.4130625e-6, m.dim().pow(3));
 
     /// gill
-    pub const gi: Scalar = Scalar(142.0653125e-6, m.pow(3));
+    pub const gi: Scalar = Scalar(142.0653125e-6, m.dim().pow(3));
 
     /// pint
-    pub const pt: Scalar = Scalar(568.26125e-6, m.pow(3));
+    pub const pt: Scalar = Scalar(568.26125e-6, m.dim().pow(3));
 
     /// quart
-    pub const qt: Scalar = Scalar(1136.5225e-6, m.pow(3));
+    pub const qt: Scalar = Scalar(1136.5225e-6, m.dim().pow(3));
 
     /// gallon
-    pub const gal: Scalar = Scalar(4546.09e-6, m.pow(3));
+    pub const gal: Scalar = Scalar(4546.09e-6, m.dim().pow(3));
 
     /// grain
-    pub const gr: Scalar = Scalar(64.79891e-6, kg);
+    pub const gr: Scalar = Scalar(64.79891e-6, kg.dim());
 
     /// drachm
-    pub const dr: Scalar = Scalar(1.7718451953125e-3, kg);
+    pub const dr: Scalar = Scalar(1.7718451953125e-3, kg.dim());
 
     /// ounce
-    pub const oz: Scalar = Scalar(28.349523125e-3, kg);
+    pub const oz: Scalar = Scalar(28.349523125e-3, kg.dim());
 
     /// pound
-    pub const lb: Scalar = Scalar(0.45359237, kg);
+    pub const lb: Scalar = Scalar(0.45359237, kg.dim());
 
     /// stone
-    pub const st: Scalar = Scalar(6.35029318, kg);
+    pub const st: Scalar = Scalar(6.35029318, kg.dim());
 
     /// qaurter
-    pub const qtr: Scalar = Scalar(12.70058636, kg);
+    pub const qtr: Scalar = Scalar(12.70058636, kg.dim());
 
     /// hundredweight
-    pub const cwt: Scalar = Scalar(50.80234544, kg);
+    pub const cwt: Scalar = Scalar(50.80234544, kg.dim());
 
     /// ton
-    pub const ton: Scalar = Scalar(1016.0469088, kg);
+    pub const ton: Scalar = Scalar(1016.0469088, kg.dim());
 
     /// slug
-    pub const slug: Scalar = Scalar(14.59390294, kg);
-
-    // ----------------------------------------------------------------------------------
-
-    pub const of_velocity: Unit = m.div(s);
-    pub const of_acceleration: Unit = m.div(s.pow(2));
-    pub const of_jerk: Unit = m.div(s.pow(3));
-    pub const of_snap: Unit = m.div(s.pow(4));
-    pub const of_angular_velocity: Unit = rad.div(s);
-    pub const of_angular_acceleration: Unit = rad.div(s.pow(2));
-    pub const of_frequency_drift: Unit = Hz.div(s);
-    pub const of_volumetric_flow: Unit = m.pow(3).div(s);
-
-    pub const of_area: Unit = m.pow(2);
-    pub const of_volume: Unit = m.pow(3);
-    pub const of_momentum: Unit = N.mul(s);
-    pub const of_angular_momentum: Unit = N.mul(m).mul(s);
-    pub const of_torque: Unit = N.mul(m);
-    pub const of_yank: Unit = N.div(s);
-    pub const reciprocal_meter: Unit = m.pow(-1);
-    pub const of_area_density: Unit = kg.div(m.pow(2));
-    pub const of_density: Unit = kg.div(m.pow(3));
-    pub const of_specific_volume: Unit = m.pow(3).div(kg);
-    pub const of_action: Unit = J.mul(s);
-    pub const of_specific_energy: Unit = J.div(kg);
-    pub const of_energy_density: Unit = J.div(m.pow(3));
-    pub const of_surface_tension: Unit = N.div(m);
-    pub const of_irradiance: Unit = W.div(m.pow(2));
-    pub const of_kinematic_viscosity: Unit = m.pow(2).div(s);
-    pub const of_dynamic_viscosity: Unit = Pa.mul(s);
-    pub const of_linear_mass_density: Unit = kg.div(m);
-    pub const of_mass_flow_rate: Unit = kg.div(s);
-    pub const of_radiance: Unit = W.div(sr).div(m.pow(2));
-    pub const of_spectral_radiance: Unit = W.div(sr).div(m.pow(3));
-    pub const of_spectral_power: Unit = W.div(m);
-    pub const of_absorbed_dose_rate: Unit = Gy.div(s);
-    pub const of_fuel_efficiency: Unit = m.div(m.pow(3));
-    pub const of_spectral_irradiance: Unit = W.div(m.pow(3));
-    pub const of_energy_flux_density: Unit = J.div(m.pow(2)).div(s);
-    pub const of_moment_of_inertia: Unit = kg.mul(m.pow(2));
-    pub const of_specific_angular_momentum: Unit = N.mul(m).mul(s).div(kg);
-    pub const of_radiant_intensity: Unit = W.div(sr);
-    pub const of_spectral_intensity: Unit = W.div(sr).div(m);
-
-    pub const of_molarity: Unit = mol.div(m.pow(3));
-    pub const molar_volume: Unit = m.pow(3).div(mol);
-    pub const of_molar_heat_capacity: Unit = J.div(mol).div(K);
-    pub const of_molar_energy: Unit = J.div(mol);
-    pub const of_molar_conductivity: Unit = S.div(m.pow(2)).div(mol);
-    pub const of_molality: Unit = mol.div(kg);
-    pub const of_molar_mass: Unit = kg.div(mol);
-    pub const of_catalystic_efficiency: Unit = m.pow(3).div(mol).div(s);
-    pub const reciprocal_mole: Unit = mol.pow(-1);
-
-    pub const of_luminous_energy: Unit = lm.mul(s);
-    pub const of_luminous_exposure: Unit = lx.mul(s);
-    pub const of_luminance: Unit = cd.div(m.pow(2));
-    pub const of_luminous_efficacy: Unit = lm.div(W);
-
-    pub const of_heat_capacitance: Unit = J.div(K);
-    pub const of_specific_heat_capacitance: Unit = J.div(kg).div(K);
-    pub const of_thermal_conductivity: Unit = W.div(m).div(K);
-    pub const of_thermal_resistance: Unit = K.div(W);
-    pub const reciprocal_kelvin: Unit = K.pow(-1);
-    pub const of_temperature_gradient: Unit = K.div(m);
-
-    pub const of_polarization_density: Unit = C.div(m.pow(2));
-    pub const of_electric_charge_density: Unit = C.div(m.pow(3));
-    pub const of_electric_current_density: Unit = A.div(m.pow(2));
-    pub const of_electrical_conductivity: Unit = S.div(m);
-    pub const of_permittivity: Unit = F.div(m);
-    pub const of_magnetic_permeability: Unit = H.div(m);
-    pub const of_electric_field_strength: Unit = V.div(m);
-    pub const of_magnetization: Unit = A.div(m);
-    pub const of_exposure: Unit = C.div(kg);
-    pub const of_resistivity: Unit = Ω.mul(m);
-    pub const of_linear_charge_density: Unit = C.div(m);
-    pub const of_magnetic_dipole_moment: Unit = J.div(T);
-    pub const of_electron_mobility: Unit = m.pow(2).div(V).div(s);
-    pub const reciprocal_henry: Unit = H.pow(-1);
-    pub const of_magnetic_vector_potential: Unit = Wb.div(m);
-    pub const of_magnetic_moment: Unit = Wb.mul(m);
-    pub const of_magnetic_rigidity: Unit = T.mul(m);
-    pub const of_magnetomotive_force: Unit = A.mul(rad);
-    pub const of_magnetic_susceptibility: Unit = m.div(H);
+    pub const slug: Scalar = Scalar(14.59390294, kg.dim());
 }
 
 pub mod constants {
     use super::units::*;
-    use crate::{unit::SIPrefix, Scalar};
+    use crate::{dimension::Dimension, dimension::SIPrefix, Scalar};
     pub use std::f64::consts::PI;
 
     // SI-UNITS-----------------------------------------------------------------
 
     /// speed of light in vacuum
-    // pub const c: Scalar = Scalar(299792458.0, m.div(s));
-    pub const c: Scalar = Scalar(1000.0, m.div(s));
+    pub const c: Scalar = Scalar(299792458.0, m.dim().div(s.dim()));
 
     /// Planck constant
-    pub const h: Scalar = Scalar(6.62607015e-34, J.mul(s));
+    pub const h: Scalar = Scalar(6.62607015e-34, J.dim().mul(s.dim()));
 
     /// Hyperfine transition frequency of 133Cs
-    pub const ΔνCs: Scalar = Scalar(9192631770.0, Hz);
+    pub const ΔνCs: Scalar = Scalar(9192631770.0, Hz.dim());
 
     /// Elementary charge
-    pub const e: Scalar = Scalar(1.602176634e-19, C);
+    pub const e: Scalar = Scalar(1.602176634e-19, C.dim());
 
     /// Boltzmann constant
-    pub const k_B: Scalar = Scalar(1.380649e-23, J.div(K));
+    pub const k_B: Scalar = Scalar(1.380649e-23, J.dim().div(K.dim()));
 
     /// Avogadro constant
-    pub const N_A: Scalar = Scalar(6.02214076e23, mol.pow(-1));
+    pub const N_A: Scalar = Scalar(6.02214076e23, mol.dim().inv());
 
     /// Luminous efficacy of 540 THz monochromatic radiation
-    pub const K_cd: Scalar = Scalar(683.0, lm.div(W));
+    pub const K_cd: Scalar = Scalar(683.0, lm.dim().div(W.dim()));
 
     // --------------------------------------------------------------------------
 
     /// Newtonian constant of gravitation
-    pub const G: Scalar = Scalar(6.6743e-11, m.pow(3).div(kg).div(s.pow(2)));
+    pub const G: Scalar = Scalar(6.6743e-11, m.dim().pow(3).div(kg.dim()).div(s.dim().pow(2)));
 
     /// Fine-structure constant
-    pub const α: Scalar = Scalar(0.0072973525693, Null);
+    pub const α: Scalar = Scalar(0.0072973525693, Dimension::NONE);
 
     /// Wien wavelength displacement law constant
-    pub const b: Scalar = Scalar(2.897771955e-3, m.mul(K));
+    pub const b: Scalar = Scalar(2.897771955e-3, m.dim().mul(K.dim()));
 
     /// Wien frequency displacement law constant
-    pub const b_freq: Scalar = Scalar(5.878925757e10, Hz.div(K));
+    pub const b_freq: Scalar = Scalar(5.878925757e10, Hz.dim().div(K.dim()));
 
     /// Wien entropy displacement law constant
-    pub const b_entropy: Scalar = Scalar(3.002916077e-3, m.mul(K));
+    pub const b_entropy: Scalar = Scalar(3.002916077e-3, m.dim().mul(K.dim()));
 
     /// Electron mass
-    pub const m_e: Scalar = Scalar(9.1093837015e-31, kg);
+    pub const m_e: Scalar = Scalar(9.1093837015e-31, kg.dim());
 
     /// Proton mass
-    pub const m_p: Scalar = Scalar(1.67262192369e-27, kg);
+    pub const m_p: Scalar = Scalar(1.67262192369e-27, kg.dim());
 
     /// Neutron mass
-    pub const m_n: Scalar = Scalar(1.67492749804e-27, kg);
+    pub const m_n: Scalar = Scalar(1.67492749804e-27, kg.dim());
 
     /// Muon mass
-    pub const m_μ: Scalar = Scalar(1.883531627e-28, kg);
+    pub const m_μ: Scalar = Scalar(1.883531627e-28, kg.dim());
 
     /// Tau mass
-    pub const m_τ: Scalar = Scalar(3.16754e-27, kg);
+    pub const m_τ: Scalar = Scalar(3.16754e-27, kg.dim());
 
     /// Top quark mass
-    pub const m_t: Scalar = Scalar(3.0784e-25, kg);
+    pub const m_t: Scalar = Scalar(3.0784e-25, kg.dim());
 
     /// W to Z mass ratio
-    pub const m_W_ratio_m_Z: Scalar = Scalar(0.88153, Null);
+    pub const m_W_ratio_m_Z: Scalar = Scalar(0.88153, Dimension::NONE);
 
     /// Proton g-factor
-    pub const g_p: Scalar = Scalar(5.5856946893, Null);
+    pub const g_p: Scalar = Scalar(5.5856946893, Dimension::NONE);
 
     /// Electron g-factor
-    pub const g_e: Scalar = Scalar(-2.00231930436256, Null);
+    pub const g_e: Scalar = Scalar(-2.00231930436256, Dimension::NONE);
 
     /// Muon g-factor
-    pub const g_μ: Scalar = Scalar(-2.0023318418, Null);
+    pub const g_μ: Scalar = Scalar(-2.0023318418, Dimension::NONE);
 
     crate::c! {
         /// speed of light in vacuum squared
@@ -426,13 +338,13 @@ pub mod constants {
         pub const μ_0: Scalar = 2.0 * α * h / (e.squared() * c);
 
         /// Characteristic impedance of vacuum
-        pub const Z_0: Scalar = (ε_0() * c).recip();
+        pub const Z_0: Scalar = (ε_0() * c).inv();
 
         /// Vacuum electric permittivity
-        pub const ε_0: Scalar = (μ_0() * c2()).recip();
+        pub const ε_0: Scalar = (μ_0() * c2()).inv();
 
         /// Coulomb constant
-        pub const k_e: Scalar = (4.0 * PI * ε_0()).recip();
+        pub const k_e: Scalar = (4.0 * PI * ε_0()).inv();
 
         /// Stefan–Boltzmann constant
         pub const σ: Scalar = 2.0 * PI.powi(5) * k_B.powi(4) / (15.0 * h.powi(3) * c2());
@@ -450,7 +362,7 @@ pub mod constants {
         pub const G_0: Scalar = 2.0 * e.squared() / h;
 
         /// Inverse conductance quantum
-        pub const G_0_inv: Scalar = G_0().recip();
+        pub const G_0_inv: Scalar = G_0().inv();
 
         /// Von Klitzing constant
         pub const R_K: Scalar = h / e.squared();
@@ -459,16 +371,16 @@ pub mod constants {
         pub const K_J: Scalar = 2.0 * e / h;
 
         /// Magnetic Flux Quantum
-        pub const Φ_0: Scalar = K_J().recip();
+        pub const Φ_0: Scalar = K_J().inv();
 
         /// Inverse fine-structure constant
-        pub const α_inv: Scalar = α.recip();
+        pub const α_inv: Scalar = α.inv();
 
         /// Proton to electron mass ratio
         pub const m_p_ratio_m_e: Scalar = m_p / m_e;
 
         /// Weak mixing angle
-        pub const θ_W: Scalar = m_W_ratio_m_Z.acos() * Null;
+        pub const θ_W: Scalar = m_W_ratio_m_Z.acos() * Dimension::NONE;
 
         /// sin^2 Weak mixing angle
         pub const sin2_θ_W: Scalar = 1.0 - m_W_ratio_m_Z.squared();
@@ -545,4 +457,4 @@ use crate::Vector;
 use units::{m, s};
 
 /// standard gravitational acceleration for the surface of the Earth
-pub const g: Vector<3> = Vector([0.0, 9.80665, 0.0], m.div(s.pow(2)));
+pub const g: Vector<3> = Vector([0.0, 9.80665, 0.0], m.dim().div(s.dim().pow(2)));

@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::{simulation::color::WHITE, unit::UnitError, units, Float, Scalar, Vector};
+use crate::{dimension::DimensionError, simulation::color::WHITE, units, Float, Scalar, Vector};
 
 use crate::simulation::Color;
 
@@ -18,7 +18,7 @@ impl<const N: usize> ObjectBuilder<N> {
     pub fn new_at(position: Vector<N>) -> Self {
         ObjectBuilder {
             position,
-            velocity: Vector::zero() * units::of_velocity,
+            velocity: Vector::zero() * units::m / units::s,
             mass: 1.0 * units::kg,
             charge: 0.0 * units::C,
             size: 1.0 * units::m,
@@ -27,13 +27,13 @@ impl<const N: usize> ObjectBuilder<N> {
         }
     }
 
-    pub fn build(self) -> Result<Object<N>, UnitError> {
-        self.position.get_uniterror(units::m, "position")?;
+    pub fn build(self) -> Result<Object<N>, DimensionError> {
+        self.position.dimension_err(units::m, "position")?;
         self.velocity
-            .get_uniterror(units::m / units::s, "velocity")?;
-        self.mass.get_uniterror(units::kg, "mass")?;
-        self.charge.get_uniterror(units::C, "charge")?;
-        self.size.get_uniterror(units::m, "size")?;
+            .dimension_err(units::m / units::s, "velocity")?;
+        self.mass.dimension_err(units::kg, "mass")?;
+        self.charge.dimension_err(units::C, "charge")?;
+        self.size.dimension_err(units::m, "size")?;
 
         let intrinsic = IntrinsicProperty {
             mass: self.mass,
@@ -173,8 +173,8 @@ impl<const N: usize> Object<N> {
     }
 
     #[inline(always)]
-    /// E = γmc2
-    pub fn energy(&self) -> Scalar {
+    /// E = KE + rest energy = γmc2
+    pub fn internal_energy(&self) -> Scalar {
         self.intrinsic.mass * crate::constants::c2() * self.lorentz_factor()
     }
 

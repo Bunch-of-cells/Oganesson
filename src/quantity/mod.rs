@@ -1,8 +1,8 @@
 pub mod consts;
+pub mod dimension;
 pub mod field;
 pub mod scalar;
 pub mod tensor;
-pub mod unit;
 pub mod vector;
 
 pub use consts::*;

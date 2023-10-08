@@ -4,21 +4,18 @@ use std::{
 };
 
 use crate::{
-    unit::{SIPrefix, Unit, UnitError},
-    units::Null,
+    dimension::{Dimension, DimensionError, SIPrefix},
     Float,
 };
 
 #[derive(Clone, Copy, PartialEq)]
-pub struct Scalar(pub Float, pub Unit);
+pub struct Scalar(pub Float, pub Dimension);
 
 impl Scalar {
+    pub const ZERO: Scalar = Scalar(0.0, Dimension::NONE);
+
     pub const fn value(&self) -> Float {
         self.0
-    }
-
-    pub const fn zero() -> Scalar {
-        Scalar(0.0, Null)
     }
 
     #[inline(always)]
@@ -42,20 +39,25 @@ impl Scalar {
         }
     }
 
-    pub fn get_uniterror(&self, unit: Unit, var: &str) -> Result<(), UnitError> {
-        if self.1 != unit {
-            Err(UnitError::expected_unit_of(unit, self.1, var))
+    pub fn dimension_err(
+        &self,
+        dim: impl Into<Dimension>,
+        var: &str,
+    ) -> Result<(), DimensionError> {
+        let dim = dim.into();
+        if self.1 != dim {
+            Err(DimensionError::expected_dimension_of(dim, self.1, var))
         } else {
             Ok(())
         }
     }
 
-    pub const fn unit(&self) -> Unit {
+    pub const fn dim(&self) -> Dimension {
         self.1
     }
 
     #[inline(always)]
-    /// **This does not raise the units to the given power, use it at your own risk**
+    /// **This does not raise the dimensions to the given power, use it at your own risk**
     pub fn powf(self, n: Float) -> Scalar {
         Scalar(self.0.powf(n), self.1)
     }
@@ -86,14 +88,14 @@ impl Scalar {
     }
 
     #[inline(always)]
-    pub fn recip(self) -> Scalar {
-        Scalar(self.0.recip(), self.1.recip())
+    pub fn inv(self) -> Scalar {
+        Scalar(self.0.recip(), self.1.inv())
     }
 }
 
 impl Default for Scalar {
     fn default() -> Self {
-        Self::zero()
+        Self::ZERO
     }
 }
 
@@ -105,7 +107,7 @@ impl Debug for Scalar {
 
 impl From<Float> for Scalar {
     fn from(a: Float) -> Self {
-        Scalar(a, Null)
+        a * Dimension::NONE
     }
 }
 
@@ -117,7 +119,7 @@ impl Add for Scalar {
         match self.checked_add(other) {
             Some(a) => a,
             None => panic!(
-                "Cannot add scalars with different units: {} and {}",
+                "Cannot add scalars with different dimensions: {} and {}",
                 self.1, other.1
             ),
         }
@@ -158,7 +160,7 @@ impl Sub for Scalar {
         match self.checked_sub(other) {
             Some(a) => a,
             None => panic!(
-                "Cannot subtract scalars with different units: {} and {}",
+                "Cannot subtract scalars with different dimensions: {} and {}",
                 self.1, other.1
             ),
         }
@@ -216,7 +218,7 @@ impl Div<Float> for Scalar {
 impl Div<Scalar> for Float {
     type Output = Scalar;
     fn div(self, other: Scalar) -> Scalar {
-        Scalar(self / other.0, Null.div(other.1))
+        Scalar(self / other.0, other.1.inv())
     }
 }
 
@@ -241,16 +243,16 @@ impl Neg for Scalar {
     }
 }
 
-impl Mul<Unit> for Scalar {
+impl Mul<Dimension> for Scalar {
     type Output = Scalar;
-    fn mul(self, rhs: Unit) -> Self::Output {
+    fn mul(self, rhs: Dimension) -> Self::Output {
         Scalar(self.0, self.1 * rhs)
     }
 }
 
-impl Div<Unit> for Scalar {
+impl Div<Dimension> for Scalar {
     type Output = Scalar;
-    fn div(self, rhs: Unit) -> Self::Output {
+    fn div(self, rhs: Dimension) -> Self::Output {
         Scalar(self.0, self.1 / rhs)
     }
 }
@@ -274,7 +276,7 @@ impl PartialOrd for Scalar {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         if self.1 != other.1 {
             panic!(
-                "Cannot compare scalars with different units: {} and {}",
+                "Cannot compare scalars with different dimensions: {} and {}",
                 self.1, other.1
             );
         }
@@ -316,5 +318,31 @@ impl Deref for Scalar {
 impl DerefMut for Scalar {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
+    }
+}
+
+impl Mul<Scalar> for Dimension {
+    type Output = Scalar;
+    fn mul(self, rhs: Scalar) -> Self::Output {
+        Scalar(rhs.0, rhs.1 * self)
+    }
+}
+
+impl Div<Scalar> for Dimension {
+    type Output = Scalar;
+    fn div(self, rhs: Scalar) -> Self::Output {
+        Scalar(rhs.0, rhs.1 / self)
+    }
+}
+
+impl From<Scalar> for Dimension {
+    fn from(val: Scalar) -> Dimension {
+        val.1
+    }
+}
+
+impl From<Scalar> for Float {
+    fn from(val: Scalar) -> Float {
+        val.0
     }
 }
