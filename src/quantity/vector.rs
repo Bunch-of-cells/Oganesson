@@ -444,8 +444,8 @@ impl<const T: usize> Div<Dimension> for Vector<T> {
     }
 }
 
-impl From<Vector<2>> for Vec2d<f64> {
-    fn from(v: Vector<2>) -> Vec2d<f64> {
+impl From<Vector<2>> for Vec2d<Float> {
+    fn from(v: Vector<2>) -> Vec2d<Float> {
         v.0
     }
 }

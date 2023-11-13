@@ -4,7 +4,7 @@
 pub mod units {
     use crate::dimension::Dimension;
     use crate::Scalar;
-    use std::f64::consts::PI;
+    use crate::quantity::PI;
 
     /// Kilogram
     pub const kg: Scalar = Scalar(1.0, Dimension::M);
@@ -255,7 +255,7 @@ pub mod units {
 pub mod constants {
     use super::units::*;
     use crate::{dimension::Dimension, dimension::SIPrefix, Scalar};
-    pub use std::f64::consts::PI;
+    pub use crate::quantity::{E, PI};
 
     // SI-UNITS-----------------------------------------------------------------
 

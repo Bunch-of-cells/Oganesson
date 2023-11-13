@@ -11,7 +11,7 @@ use crate::{
 #[derive(Clone)]
 pub struct ScalarField<'a, const N: usize> {
     field: Rc<dyn Fn(Vector<N>) -> Scalar + 'a>,
-    dimension: Dimension,
+    dim: Dimension,
 }
 
 impl<const N: usize> ScalarField<'_, N> {
@@ -27,24 +27,24 @@ impl<const N: usize> ScalarField<'_, N> {
     }
 
     pub fn dim(&self) -> Dimension {
-        self.dimension
+        self.dim
     }
 
     pub fn at(&self, x: Vector<N>) -> Result<Scalar, DimensionError> {
         x.dimension_err(units::m.dim(), "x")?;
         let at = (self.field)(x);
-        assert_eq!(at.1, self.dimension);
+        assert_eq!(at.1, self.dim);
         Ok(at)
     }
 
     pub fn gradient(&self) -> VectorField<N> {
         (
             |x| {
-                (0..N).fold(Vector::zero() * self.dimension / units::m, |acc, i| {
+                (0..N).fold(Vector::zero() * self.dim / units::m, |acc, i| {
                     acc + self.derivative(x, Vector::basis(i)) * Vector::basis(i)
                 })
             },
-            self.dimension / units::m,
+            self.dim / units::m,
         )
             .into()
     }
@@ -53,11 +53,11 @@ impl<const N: usize> ScalarField<'_, N> {
         (
             move |x| {
                 (0..N).fold(
-                    Scalar::ZERO * self.dimension / units::m.powi(2),
+                    Scalar::ZERO * self.dim / units::m.powi(2),
                     |acc, i| acc + self.derivative2(x, Vector::basis(i)),
                 )
             },
-            self.dimension / units::m.powi(2),
+            self.dim / units::m.powi(2),
         )
             .into()
     }
@@ -70,7 +70,7 @@ where
     fn from(field: (F, D)) -> Self {
         ScalarField {
             field: Rc::new(field.0),
-            dimension: field.1.into(),
+            dim: field.1.into(),
         }
     }
 }
@@ -79,10 +79,10 @@ impl<'a, const N: usize> Add for ScalarField<'a, N> {
     type Output = ScalarField<'a, N>;
     #[track_caller]
     fn add(mut self, rhs: Self) -> Self::Output {
-        if self.dimension != rhs.dimension {
+        if self.dim != rhs.dim {
             panic!(
                 "Cannot add scalar fields of dimensions {} and {}",
-                self.dimension, rhs.dimension
+                self.dim, rhs.dim
             )
         }
         self.field = Rc::new(move |x| (self.field)(x) + (rhs.field)(x));
@@ -94,7 +94,7 @@ impl<'a, const N: usize> Mul<Scalar> for ScalarField<'a, N> {
     type Output = ScalarField<'a, N>;
     fn mul(mut self, rhs: Scalar) -> Self::Output {
         self.field = Rc::new(move |x| (self.field)(x) * rhs);
-        self.dimension = self.dimension * rhs.1;
+        self.dim = self.dim * rhs.1;
         self
     }
 }
@@ -110,7 +110,7 @@ impl<'a, const N: usize> Neg for ScalarField<'a, N> {
 #[derive(Clone)]
 pub struct VectorField<'a, const N: usize> {
     field: Rc<dyn Fn(Vector<N>) -> Vector<N> + 'a>,
-    dimension: Dimension,
+    dim: Dimension,
 }
 
 impl<const N: usize> VectorField<'_, N> {
@@ -125,19 +125,19 @@ impl<const N: usize> VectorField<'_, N> {
     //         + self.at(x - STEP  * n).unwrap())
     //     .dot(n)
     //         / STEP.powi(2)
-    //         / n.dimension().pow(2)
+    //         / n.dim().pow(2)
     // }
 
     pub fn dim(&self) -> Dimension {
-        self.dimension
+        self.dim
     }
 
     #[track_caller]
     pub fn impose(&mut self, s: Scalar, new: Self) -> Result<(), DimensionError> {
-        if self.dimension != new.dimension {
+        if self.dim != new.dim {
             panic!(
                 "Cannot impose a vector field of dimensions {} on a vector field of dimension {}",
-                new.dimension, self.dimension
+                new.dim, self.dim
             )
         }
         let old = self.field.clone();
@@ -154,18 +154,18 @@ impl<const N: usize> VectorField<'_, N> {
     pub fn at(&self, x: Vector<N>) -> Result<Vector<N>, DimensionError> {
         x.dimension_err(units::m, "x")?;
         let at = (self.field)(x);
-        assert_eq!(at.1, self.dimension);
+        assert_eq!(at.1, self.dim);
         Ok(at)
     }
 
     pub fn divergence(&self) -> ScalarField<N> {
         (
             move |x| {
-                (0..N).fold(Scalar::ZERO * self.dimension / units::m, |acc, i| {
+                (0..N).fold(Scalar::ZERO * self.dim / units::m, |acc, i| {
                     acc + self.derivative(x, Vector::basis(i))
                 })
             },
-            self.dimension / units::m,
+            self.dim / units::m,
         )
             .into()
     }
@@ -181,10 +181,10 @@ impl VectorField<'_, 3> {
                     self.derivative(x, Vector::<3>::j) - self.derivative(x, Vector::<3>::i),
                 ]
                 .map(|s| s.value())
-                    * self.dimension
+                    * self.dim
                     / units::m
             },
-            self.dimension / units::m,
+            self.dim / units::m,
         )
             .into()
     }
@@ -205,7 +205,7 @@ where
     fn from(field: (F, D)) -> Self {
         VectorField {
             field: Rc::new(field.0),
-            dimension: field.1.into(),
+            dim: field.1.into(),
         }
     }
 }
@@ -214,10 +214,10 @@ impl<'a, const N: usize> Add for VectorField<'a, N> {
     type Output = VectorField<'a, N>;
     #[track_caller]
     fn add(mut self, rhs: Self) -> Self::Output {
-        if self.dimension != rhs.dimension {
+        if self.dim != rhs.dim {
             panic!(
                 "Cannot add vector fields of dimensions {} and {}",
-                self.dimension, rhs.dimension
+                self.dim, rhs.dim
             )
         }
         self.field = Rc::new(move |x| (self.field)(x) + (rhs.field)(x));
@@ -229,7 +229,7 @@ impl<'a, const N: usize> Mul<Scalar> for VectorField<'a, N> {
     type Output = VectorField<'a, N>;
     fn mul(mut self, rhs: Scalar) -> Self::Output {
         self.field = Rc::new(move |x| (self.field)(x) * rhs);
-        self.dimension = self.dimension * rhs.1;
+        self.dim = self.dim * rhs.1;
         self
     }
 }
@@ -239,7 +239,7 @@ impl<'a, const N: usize> Mul<Vector<N>> for ScalarField<'a, N> {
     fn mul(self, rhs: Vector<N>) -> Self::Output {
         VectorField {
             field: Rc::new(move |x| (self.field)(x) * rhs),
-            dimension: self.dimension * rhs.1,
+            dim: self.dim * rhs.1,
         }
     }
 }

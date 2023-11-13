@@ -222,7 +222,7 @@ impl Dimension {
             self.luminous_intensity,
         ]
         .iter()
-        .any(|&dimension| dimension % exp != 0)
+        .any(|&dim| dim % exp != 0)
         {
             panic!("Can't");
         }
@@ -266,12 +266,12 @@ impl Dimension {
         dimensions
             .into_iter()
             .filter(|&(_, exp)| exp != 0)
-            .try_for_each(|(dimension, exp)| {
-                let dimension = match exp {
-                    1 => dimension.to_string(),
-                    _ => format!("{}^{}", dimension, exp),
+            .try_for_each(|(dim, exp)| {
+                let dim = match exp {
+                    1 => dim.to_string(),
+                    _ => format!("{}^{}", dim, exp),
                 };
-                write!(out, "{} ", dimension)
+                write!(out, "{} ", dim)
             })
             .unwrap();
 
@@ -326,22 +326,22 @@ impl Display for Dimension {
         dimensions
             .into_iter()
             .filter(|&(_, exp)| exp != 0)
-            .try_for_each(|(dimension, exp)| {
-                let dimension = match exp {
-                    1 => dimension.to_string(),
+            .try_for_each(|(dim, exp)| {
+                let dim = match exp {
+                    1 => dim.to_string(),
                     _ if exp < 0 => {
                         if !denominator {
                             denominator = true;
                             write!(out, "/ ")?;
                         }
                         match exp {
-                            -1 => dimension.to_string(),
-                            _ => format!("{}^{}", dimension, -exp),
+                            -1 => dim.to_string(),
+                            _ => format!("{}^{}", dim, -exp),
                         }
                     }
-                    _ => format!("{}^{}", dimension, exp),
+                    _ => format!("{}^{}", dim, exp),
                 };
-                write!(out, "{} ", dimension)
+                write!(out, "{} ", dim)
             })?;
 
         write!(f, "{}", out.trim_end())
