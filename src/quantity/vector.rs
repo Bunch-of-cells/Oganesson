@@ -3,7 +3,7 @@ use std::{
     ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Neg, Sub, SubAssign},
 };
 
-use piston_window::types::Vec2d;
+use macroquad::prelude::{Vec2, Vec3};
 
 use crate::{
     dimension::{Dimension, DimensionError},
@@ -36,7 +36,7 @@ impl<const N: usize> Vector<N> {
         self.0
             .iter()
             .zip(other.0.iter())
-            .fold(1.0 * self.1 * other.1, |acc, (&x1, &x2)| acc + x1 * x2)
+            .fold(0.0 * self.1 * other.1, |acc, (&x1, &x2)| acc + x1 * x2)
     }
 
     pub fn checked_add(self, other: Vector<N>) -> Option<Vector<N>> {
@@ -444,9 +444,22 @@ impl<const T: usize> Div<Dimension> for Vector<T> {
     }
 }
 
-impl From<Vector<2>> for Vec2d<Float> {
-    fn from(v: Vector<2>) -> Vec2d<Float> {
-        v.0
+impl From<Vector<2>> for Vec2 {
+    fn from(v: Vector<2>) -> Vec2 {
+        Vec2 {
+            x: v.0[0] as _,
+            y: v.0[1] as _,
+        }
+    }
+}
+
+impl From<Vector<3>> for Vec3 {
+    fn from(v: Vector<3>) -> Vec3 {
+        Vec3 {
+            x: v.0[0] as _,
+            y: v.0[1] as _,
+            z: v.0[2] as _,
+        }
     }
 }
 

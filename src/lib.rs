@@ -1,13 +1,12 @@
 #![allow(confusable_idents)]
 #![allow(uncommon_codepoints)]
 
-extern crate piston_window;
+mod collision;
+mod object;
+mod quantity;
+mod universe;
 
-pub mod object;
-pub mod quantity;
-pub mod simulation;
-pub mod universe;
-
+pub use collision::Collider;
 pub use object::{IntrinsicProperty, Object, ObjectAttributes, ObjectBuilder, ObjectID};
 pub use quantity::*;
 pub use universe::Universe;

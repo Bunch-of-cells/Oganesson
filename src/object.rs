@@ -1,8 +1,7 @@
 use std::fmt::Debug;
 
-use crate::{dimension::DimensionError, simulation::color::WHITE, units, Float, Scalar, Vector};
-
-use crate::simulation::Color;
+use crate::{dimension::DimensionError, units, Collider, Float, Scalar, Vector};
+use macroquad::color::{Color, WHITE};
 
 pub struct ObjectBuilder<const N: usize> {
     velocity: Vector<N>,
@@ -114,6 +113,21 @@ impl<const N: usize> Object<N> {
     fn acceleration(&mut self, force: Vector<N>) -> Vector<N> {
         self.inv_lorentz_factor() / self.mass()
             * (force - force.dot(self.velocity()) * self.velocity() / crate::constants::c2())
+    }
+
+    pub(crate) fn set_velocity(&mut self, velocity: Vector<N>) {
+        self.velocity = [velocity; 4];
+    }
+
+    pub(crate) fn set_position(&mut self, position: Vector<N>) {
+        self.position = position;
+    }
+
+    pub fn collider(&self) -> Collider<N> {
+        Collider {
+            position: self.position,
+            size: self.intrinsic.size,
+        }
     }
 
     // Getters

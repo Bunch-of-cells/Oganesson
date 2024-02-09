@@ -6,7 +6,4 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-piston_window = "0.130.0"
-plotters = "0.3.0"
-plotters-piston = "0.3.0"
-
+macroquad = "0.4.4"

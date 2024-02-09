@@ -52,10 +52,9 @@ impl<const N: usize> ScalarField<'_, N> {
     pub fn laplacian(&self) -> ScalarField<N> {
         (
             move |x| {
-                (0..N).fold(
-                    Scalar::ZERO * self.dim / units::m.powi(2),
-                    |acc, i| acc + self.derivative2(x, Vector::basis(i)),
-                )
+                (0..N).fold(Scalar::ZERO * self.dim / units::m.powi(2), |acc, i| {
+                    acc + self.derivative2(x, Vector::basis(i))
+                })
             },
             self.dim / units::m.powi(2),
         )

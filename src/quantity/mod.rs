@@ -2,18 +2,19 @@ pub mod consts;
 pub mod dimension;
 pub mod field;
 pub mod scalar;
-pub mod tensor;
 pub mod vector;
 
 pub use consts::*;
 pub use field::{ScalarField, VectorField};
 pub use scalar::Scalar;
-pub use tensor::Tensor;
 pub use vector::Vector;
 
-pub type Float = f64;
-pub use std::f64::{consts::{E, PI}, EPSILON};
-pub const STEP: Float = 1e-3;
+pub type Float = f32;
+pub use std::f32::{
+    consts::{E, PI},
+    EPSILON,
+};
+pub const STEP: Float = 1e-4;
 
 pub struct DiffSolver<I: Fn(Float, Float, Float) -> Float> {
     a: I,

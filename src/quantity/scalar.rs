@@ -88,7 +88,7 @@ impl Scalar {
     }
 
     #[inline(always)]
-    pub fn inv(self) -> Scalar {
+    pub fn recip(self) -> Scalar {
         Scalar(self.0.recip(), self.1.inv())
     }
 }

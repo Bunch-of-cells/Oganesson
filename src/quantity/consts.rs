@@ -3,8 +3,8 @@
 
 pub mod units {
     use crate::dimension::Dimension;
-    use crate::Scalar;
     use crate::quantity::PI;
+    use crate::Scalar;
 
     /// Kilogram
     pub const kg: Scalar = Scalar(1.0, Dimension::M);
@@ -254,8 +254,8 @@ pub mod units {
 
 pub mod constants {
     use super::units::*;
-    use crate::{dimension::Dimension, dimension::SIPrefix, Scalar};
     pub use crate::quantity::{E, PI};
+    use crate::{dimension::Dimension, dimension::SIPrefix, Scalar};
 
     // SI-UNITS-----------------------------------------------------------------
 
@@ -283,7 +283,8 @@ pub mod constants {
     // --------------------------------------------------------------------------
 
     /// Newtonian constant of gravitation
-    pub const G: Scalar = Scalar(6.6743e-11, m.dim().pow(3).div(kg.dim()).div(s.dim().pow(2)));
+    // pub const G: Scalar = Scalar(6.6743e-11, m.dim().pow(3).div(kg.dim()).div(s.dim().pow(2)));
+    pub const G: Scalar = Scalar(6.6743e2, m.dim().pow(3).div(kg.dim()).div(s.dim().pow(2)));
 
     /// Fine-structure constant
     pub const α: Scalar = Scalar(0.0072973525693, Dimension::NONE);
@@ -338,13 +339,13 @@ pub mod constants {
         pub const μ_0: Scalar = 2.0 * α * h / (e.squared() * c);
 
         /// Characteristic impedance of vacuum
-        pub const Z_0: Scalar = (ε_0() * c).inv();
+        pub const Z_0: Scalar = (ε_0() * c).recip();
 
         /// Vacuum electric permittivity
-        pub const ε_0: Scalar = (μ_0() * c2()).inv();
+        pub const ε_0: Scalar = (μ_0() * c2()).recip();
 
         /// Coulomb constant
-        pub const k_e: Scalar = (4.0 * PI * ε_0()).inv();
+        pub const k_e: Scalar = (4.0 * PI * ε_0()).recip();
 
         /// Stefan–Boltzmann constant
         pub const σ: Scalar = 2.0 * PI.powi(5) * k_B.powi(4) / (15.0 * h.powi(3) * c2());
@@ -362,7 +363,7 @@ pub mod constants {
         pub const G_0: Scalar = 2.0 * e.squared() / h;
 
         /// Inverse conductance quantum
-        pub const G_0_inv: Scalar = G_0().inv();
+        pub const G_0_inv: Scalar = G_0().recip();
 
         /// Von Klitzing constant
         pub const R_K: Scalar = h / e.squared();
@@ -371,10 +372,10 @@ pub mod constants {
         pub const K_J: Scalar = 2.0 * e / h;
 
         /// Magnetic Flux Quantum
-        pub const Φ_0: Scalar = K_J().inv();
+        pub const Φ_0: Scalar = K_J().recip();
 
         /// Inverse fine-structure constant
-        pub const α_inv: Scalar = α.inv();
+        pub const α_inv: Scalar = α.recip();
 
         /// Proton to electron mass ratio
         pub const m_p_ratio_m_e: Scalar = m_p / m_e;
