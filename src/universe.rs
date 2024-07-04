@@ -1,4 +1,6 @@
-use crate::{collision::possible_collisions, constants, units, Float, Object, ObjectID, Vector};
+use crate::{
+    collision::possible_collisions, constants, units, Float, Object, ObjectID, Vector, STEP,
+};
 
 pub struct Universe<const N: usize> {
     objects: Vec<Object<N>>,
@@ -37,28 +39,28 @@ impl<const N: usize> Universe<N> {
     }
 
     pub fn step(&mut self, dt: Float) {
-        let dt = dt * units::s;
-        let mut f = Vec::new();
-        for obj in self.objects.iter() {
-            f.push((obj.mass(), obj.position()))
-        }
-        for (i, object) in self.objects.iter_mut().enumerate() {
-            if object.velocity().magnitude() < 0.1 {
-                let p = object.position();
-                println!("{i} : {p:?}");
+        for _ in 0..(dt / STEP) as usize {
+            let mut f = Vec::new();
+            for obj in self.objects.iter() {
+                f.push((obj.mass(), obj.position(), obj.size()))
             }
-            let mut force = Vector::zero() * units::N;
-            for (j, (m, r2)) in f.iter().enumerate() {
-                if j == i {
-                    continue;
+            for (i, object) in self.objects.iter_mut().enumerate() {
+                let mut force = Vector::zero() * units::N;
+                for (j, (m, r2, s)) in f.iter().enumerate() {
+                    if j == i {
+                        continue;
+                    }
+                    let r1 = object.position();
+                    let r = *r2 - r1;
+                    if r.magnitude() < object.size() + *s {
+                        continue;
+                    }
+                    force += r.normalized() * constants::G * object.mass() * *m / r.squared()
                 }
-                let r1 = object.position();
-                let r = *r2 - r1;
-                force += r.normalized() * constants::G * object.mass() * *m / r.squared()
+                object.update(STEP * units::s, force);
             }
-            object.update(dt, force);
+            self.resolve_collisions();
         }
-        self.resolve_collisions();
     }
 
     fn resolve_collisions(&mut self) {
@@ -72,8 +74,8 @@ impl<const N: usize> Universe<N> {
                 let u_b = b.velocity();
                 let m_a = a.mass();
                 let m_b = b.mass();
-                let x_a = a.position();
-                let x_b = b.position();
+                // let x_a = a.position();
+                // let x_b = b.position();
 
                 let e = a
                     .attributes()
@@ -87,8 +89,8 @@ impl<const N: usize> Universe<N> {
                 let v_b = u_b - j / m_b;
                 self.objects[obj_a].set_velocity(v_a);
                 self.objects[obj_b].set_velocity(v_b);
-                self.objects[obj_a].set_position(x_a + normal / 2.0);
-                self.objects[obj_b].set_position(x_b - normal / 2.0);
+                // self.objects[obj_a].set_position(x_a + normal / 2.0);
+                // self.objects[obj_b].set_position(x_b - normal / 2.0);
             }
         }
     }

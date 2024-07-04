@@ -247,13 +247,13 @@ impl Vector<3> {
     }
 }
 
-impl<const T: usize> Default for Vector<T> {
+impl<const N: usize> Default for Vector<N> {
     fn default() -> Self {
         Self::zero()
     }
 }
 
-impl<const T: usize> Debug for Vector<T> {
+impl<const N: usize> Debug for Vector<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut iter = self.0.iter();
         if let Some(dim) = iter.next() {
@@ -266,22 +266,22 @@ impl<const T: usize> Debug for Vector<T> {
     }
 }
 
-impl<const T: usize> From<[Float; T]> for Vector<T> {
-    fn from(a: [Float; T]) -> Self {
+impl<const N: usize> From<[Float; N]> for Vector<N> {
+    fn from(a: [Float; N]) -> Self {
         Vector(a, Dimension::NONE)
     }
 }
 
-impl<const T: usize> From<[Scalar; T]> for Vector<T> {
-    fn from(a: [Scalar; T]) -> Self {
+impl<const N: usize> From<[Scalar; N]> for Vector<N> {
+    fn from(a: [Scalar; N]) -> Self {
         Vector(a.map(|s| s.0), a.first().map(|s| s.1).unwrap_or_default())
     }
 }
 
-impl<const T: usize> Add for Vector<T> {
-    type Output = Vector<T>;
+impl<const N: usize> Add for Vector<N> {
+    type Output = Vector<N>;
     #[track_caller]
-    fn add(self, other: Vector<T>) -> Vector<T> {
+    fn add(self, other: Vector<N>) -> Vector<N> {
         match self.checked_add(other) {
             Some(v) => v,
             None => panic!(
@@ -292,17 +292,17 @@ impl<const T: usize> Add for Vector<T> {
     }
 }
 
-impl<const T: usize> AddAssign for Vector<T> {
+impl<const N: usize> AddAssign for Vector<N> {
     #[track_caller]
-    fn add_assign(&mut self, other: Vector<T>) {
+    fn add_assign(&mut self, other: Vector<N>) {
         *self = *self + other;
     }
 }
 
-impl<const T: usize> Sub for Vector<T> {
-    type Output = Vector<T>;
+impl<const N: usize> Sub for Vector<N> {
+    type Output = Vector<N>;
     #[track_caller]
-    fn sub(self, other: Vector<T>) -> Vector<T> {
+    fn sub(self, other: Vector<N>) -> Vector<N> {
         match self.checked_sub(other) {
             Some(v) => v,
             None => panic!(
@@ -313,17 +313,17 @@ impl<const T: usize> Sub for Vector<T> {
     }
 }
 
-impl<const T: usize> SubAssign for Vector<T> {
+impl<const N: usize> SubAssign for Vector<N> {
     #[track_caller]
-    fn sub_assign(&mut self, other: Vector<T>) {
+    fn sub_assign(&mut self, other: Vector<N>) {
         *self = *self - other;
     }
 }
 
-impl<const T: usize> Mul<Float> for Vector<T> {
-    type Output = Vector<T>;
-    fn mul(self, other: Float) -> Vector<T> {
-        let mut result = [0.0; T];
+impl<const N: usize> Mul<Float> for Vector<N> {
+    type Output = Vector<N>;
+    fn mul(self, other: Float) -> Vector<N> {
+        let mut result = [0.0; N];
         self.0
             .iter()
             .map(|&x| x * other)
@@ -333,17 +333,17 @@ impl<const T: usize> Mul<Float> for Vector<T> {
     }
 }
 
-impl<const T: usize> Mul<Vector<T>> for Float {
-    type Output = Vector<T>;
-    fn mul(self, other: Vector<T>) -> Vector<T> {
+impl<const N: usize> Mul<Vector<N>> for Float {
+    type Output = Vector<N>;
+    fn mul(self, other: Vector<N>) -> Vector<N> {
         other * self
     }
 }
 
-impl<const T: usize> Div<Float> for Vector<T> {
-    type Output = Vector<T>;
-    fn div(self, other: Float) -> Vector<T> {
-        let mut result = [0.0; T];
+impl<const N: usize> Div<Float> for Vector<N> {
+    type Output = Vector<N>;
+    fn div(self, other: Float) -> Vector<N> {
+        let mut result = [0.0; N];
         self.0
             .iter()
             .map(|&x| x / other)
@@ -353,10 +353,10 @@ impl<const T: usize> Div<Float> for Vector<T> {
     }
 }
 
-impl<const T: usize> Mul<Scalar> for Vector<T> {
-    type Output = Vector<T>;
-    fn mul(self, other: Scalar) -> Vector<T> {
-        let mut result = [0.0; T];
+impl<const N: usize> Mul<Scalar> for Vector<N> {
+    type Output = Vector<N>;
+    fn mul(self, other: Scalar) -> Vector<N> {
+        let mut result = [0.0; N];
         self.0
             .iter()
             .map(|&x| x * other)
@@ -366,10 +366,10 @@ impl<const T: usize> Mul<Scalar> for Vector<T> {
     }
 }
 
-impl<const T: usize> Mul<Scalar> for [Float; T] {
-    type Output = Vector<T>;
-    fn mul(self, other: Scalar) -> Vector<T> {
-        let mut result = [0.0; T];
+impl<const N: usize> Mul<Scalar> for [Float; N] {
+    type Output = Vector<N>;
+    fn mul(self, other: Scalar) -> Vector<N> {
+        let mut result = [0.0; N];
         self.iter()
             .map(|&x| x * other)
             .zip(result.iter_mut())
@@ -378,17 +378,17 @@ impl<const T: usize> Mul<Scalar> for [Float; T] {
     }
 }
 
-impl<const T: usize> Mul<Vector<T>> for Scalar {
-    type Output = Vector<T>;
-    fn mul(self, other: Vector<T>) -> Vector<T> {
+impl<const N: usize> Mul<Vector<N>> for Scalar {
+    type Output = Vector<N>;
+    fn mul(self, other: Vector<N>) -> Vector<N> {
         other * self
     }
 }
 
-impl<const T: usize> Div<Scalar> for Vector<T> {
-    type Output = Vector<T>;
-    fn div(self, other: Scalar) -> Vector<T> {
-        let mut result = [0.0; T];
+impl<const N: usize> Div<Scalar> for Vector<N> {
+    type Output = Vector<N>;
+    fn div(self, other: Scalar) -> Vector<N> {
+        let mut result = [0.0; N];
         self.0
             .iter()
             .map(|&x| x / other)
@@ -398,10 +398,10 @@ impl<const T: usize> Div<Scalar> for Vector<T> {
     }
 }
 
-impl<const T: usize> Div<Scalar> for [Float; T] {
-    type Output = Vector<T>;
-    fn div(self, other: Scalar) -> Vector<T> {
-        let mut result = [0.0; T];
+impl<const N: usize> Div<Scalar> for [Float; N] {
+    type Output = Vector<N>;
+    fn div(self, other: Scalar) -> Vector<N> {
+        let mut result = [0.0; N];
         self.iter()
             .map(|&x| x / other)
             .zip(result.iter_mut())
@@ -410,35 +410,35 @@ impl<const T: usize> Div<Scalar> for [Float; T] {
     }
 }
 
-impl<const T: usize> Neg for Vector<T> {
-    type Output = Vector<T>;
+impl<const N: usize> Neg for Vector<N> {
+    type Output = Vector<N>;
     fn neg(self) -> Self::Output {
         self * -1.0
     }
 }
 
-impl<const T: usize> Index<usize> for Vector<T> {
+impl<const N: usize> Index<usize> for Vector<N> {
     type Output = Float;
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }
 }
 
-impl<const T: usize> IndexMut<usize> for Vector<T> {
+impl<const N: usize> IndexMut<usize> for Vector<N> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[index]
     }
 }
 
-impl<const T: usize> Mul<Dimension> for Vector<T> {
-    type Output = Vector<T>;
+impl<const N: usize> Mul<Dimension> for Vector<N> {
+    type Output = Vector<N>;
     fn mul(self, rhs: Dimension) -> Self::Output {
         Vector(self.0, self.1 * rhs)
     }
 }
 
-impl<const T: usize> Div<Dimension> for Vector<T> {
-    type Output = Vector<T>;
+impl<const N: usize> Div<Dimension> for Vector<N> {
+    type Output = Vector<N>;
     fn div(self, rhs: Dimension) -> Self::Output {
         Vector(self.0, self.1 / rhs)
     }
@@ -463,8 +463,8 @@ impl From<Vector<3>> for Vec3 {
     }
 }
 
-impl<const T: usize> From<Vector<T>> for Dimension {
-    fn from(val: Vector<T>) -> Dimension {
+impl<const N: usize> From<Vector<N>> for Dimension {
+    fn from(val: Vector<N>) -> Dimension {
         val.1
     }
 }

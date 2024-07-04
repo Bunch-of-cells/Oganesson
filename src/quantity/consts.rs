@@ -13,7 +13,7 @@ pub mod units {
     pub const m: Scalar = Scalar(1.0, Dimension::L);
 
     /// Second
-    pub const s: Scalar = Scalar(1.0, Dimension::T);
+    pub const s: Scalar = Scalar(1.0, Dimension::N);
 
     /// Ampere
     pub const A: Scalar = Scalar(1.0, Dimension::I);
@@ -284,7 +284,7 @@ pub mod constants {
 
     /// Newtonian constant of gravitation
     // pub const G: Scalar = Scalar(6.6743e-11, m.dim().pow(3).div(kg.dim()).div(s.dim().pow(2)));
-    pub const G: Scalar = Scalar(6.6743e2, m.dim().pow(3).div(kg.dim()).div(s.dim().pow(2)));
+    pub const G: Scalar = Scalar(1e3, m.dim().pow(3).div(kg.dim()).div(s.dim().pow(2)));
 
     /// Fine-structure constant
     pub const α: Scalar = Scalar(0.0072973525693, Dimension::NONE);
