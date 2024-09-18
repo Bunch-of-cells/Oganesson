@@ -45,7 +45,8 @@ impl<const N: usize> ObjectBuilder<N> {
         let object = Object {
             intrinsic,
             position: self.position,
-            velocity: [self.velocity; 4],
+            velocity: self.velocity,
+            acc: Vector::zero() * units::m / units::s.squared(),
         };
 
         Ok(object)
@@ -90,37 +91,17 @@ impl<const N: usize> ObjectBuilder<N> {
 
 #[derive(Clone)]
 pub struct Object<const N: usize> {
-    velocity: [Vector<N>; 4],
-    position: Vector<N>,
+    pub(crate) velocity: Vector<N>,
+    pub(crate) acc: Vector<N>,
+    pub(crate) position: Vector<N>,
     intrinsic: IntrinsicProperty,
 }
 
 impl<const N: usize> Object<N> {
-    pub(crate) fn update(&mut self, dt: Scalar, force: Vector<N>) {
-        let velocity = self.acceleration(force) * dt
-            + (self.velocity[0]
-                + 3.0 * self.velocity[1]
-                + 3.0 * self.velocity[2]
-                + self.velocity[3])
-                / 8.0;
-
-        self.position += velocity * dt;
-        self.velocity.rotate_left(1);
-        self.velocity[3] = velocity;
-    }
-
     #[inline(always)]
-    fn acceleration(&mut self, force: Vector<N>) -> Vector<N> {
+    pub(crate) fn acceleration(&mut self, force: Vector<N>) -> Vector<N> {
         self.inv_lorentz_factor() / self.mass()
             * (force - force.dot(self.velocity()) * self.velocity() / crate::constants::c2())
-    }
-
-    pub(crate) fn set_velocity(&mut self, velocity: Vector<N>) {
-        self.velocity = [velocity; 4];
-    }
-
-    pub(crate) fn set_position(&mut self, position: Vector<N>) {
-        self.position = position;
     }
 
     pub fn collider(&self) -> Collider<N> {
@@ -134,7 +115,7 @@ impl<const N: usize> Object<N> {
 
     #[inline(always)]
     pub fn velocity(&self) -> Vector<N> {
-        self.velocity[3]
+        self.velocity
     }
 
     #[inline(always)]
@@ -157,19 +138,19 @@ impl<const N: usize> Object<N> {
     }
 
     #[inline(always)]
-    pub fn intrinsic_properties(&self) -> &IntrinsicProperty {
-        &self.intrinsic
+    pub fn intrinsic_properties(&self) -> IntrinsicProperty {
+        self.intrinsic
     }
 
     #[inline(always)]
-    pub fn attributes(&self) -> &ObjectAttributes {
-        &self.intrinsic.attributes
+    pub fn attributes(&self) -> ObjectAttributes {
+        self.intrinsic.attributes
     }
 
     #[inline(always)]
     /// Calculate the lorentz factor (γ)
     pub fn lorentz_factor(&self) -> Scalar {
-        if self.velocity[3].is_zero() {
+        if self.velocity.is_zero() {
             return 1.0.into();
         }
         let den = self.inv_lorentz_factor();
@@ -180,10 +161,10 @@ impl<const N: usize> Object<N> {
     #[inline(always)]
     /// Calculate the inverse of lorentz factor (1/γ)
     pub fn inv_lorentz_factor(&self) -> Scalar {
-        if self.velocity[3].is_zero() {
+        if self.velocity.is_zero() {
             return 1.0.into();
         }
-        (1.0 - (self.velocity[3].squared() / crate::constants::c2())).powf(0.5)
+        (1.0 - (self.velocity.squared() / crate::constants::c2())).powf(0.5)
     }
 
     #[inline(always)]
@@ -201,7 +182,7 @@ impl<const N: usize> Object<N> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ObjectID(pub(crate) usize);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub struct IntrinsicProperty {
     pub mass: Scalar,
     pub charge: Scalar,
@@ -210,7 +191,7 @@ pub struct IntrinsicProperty {
     pub color: Color,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub struct ObjectAttributes {
     pub restitution_coefficient: Float,
 }
