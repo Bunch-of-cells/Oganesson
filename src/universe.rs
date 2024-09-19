@@ -1,16 +1,35 @@
+#![allow(non_snake_case)]
 use crate::{
-    collision::possible_collisions, constants, units, Float, Object, ObjectID, Vector, STEP,
+    collision::possible_collisions, constants, h, units, Float, Object, ObjectID, Vector, STEP,
 };
 
 pub struct Universe<const N: usize> {
     objects: Vec<Object<N>>,
+    field_g: Vector<N>,
+    field_E: Vector<N>,
+    field_B: Vector<N>,
 }
 
 impl<const N: usize> Universe<N> {
     pub fn new() -> Universe<N> {
         Universe {
             objects: Vec::new(),
+            field_g: Vector::zero() * units::N / units::kg,
+            field_E: Vector::zero() * units::N / units::C,
+            field_B: Vector::zero() * units::T,
         }
+    }
+
+    pub fn add_gravitational_field(&mut self, g: Vector<N>) {
+        self.field_g = g;
+    }
+
+    pub fn add_electric_field(&mut self, E: Vector<N>) {
+        self.field_E = E;
+    }
+
+    pub fn add_magnetic_field(&mut self, B: Vector<N>) {
+        self.field_B = B;
     }
 
     pub fn objects(&self) -> &[Object<N>] {
@@ -42,23 +61,29 @@ impl<const N: usize> Universe<N> {
         for _ in 0..(dt / STEP) as usize {
             let f = self.objects.clone();
             for (i, object) in self.objects.iter_mut().enumerate() {
-                let h = STEP * units::s;
-                let v = object.velocity + 0.5 * h * object.acc;
-                object.position += v * h;
+                let v = object.velocity + 0.5 * h() * object.acc;
+                object.position += v * h();
 
                 // Calculate force
                 let mut g = f.clone();
                 g[i].position = object.position;
-                let force = Self::force(&g, i, object);
+                let force = Self::force(&g, i, object, self.field_g, self.field_E, self.field_B);
                 object.acc = object.acceleration(force);
 
-                object.velocity = v + object.acc * h * 0.5;
+                object.velocity = v + object.acc * h() * 0.5;
             }
             self.resolve_collisions();
         }
     }
 
-    fn force(f: &[Object<N>], i: usize, object: &Object<N>) -> Vector<N> {
+    fn force(
+        f: &[Object<N>],
+        i: usize,
+        object: &Object<N>,
+        g: Vector<N>,
+        E: Vector<N>,
+        B: Vector<N>,
+    ) -> Vector<N> {
         let mut force = Vector::zero() * units::N;
         for (j, obj) in f.iter().enumerate() {
             if j == i {
@@ -68,12 +93,18 @@ impl<const N: usize> Universe<N> {
             let r = obj.position() - r1;
             force += r.normalized()
                 * (constants::G * object.mass() * obj.mass()
-                    + constants::k_e() * object.charge() * obj.charge())
+                    - constants::k_e() * object.charge() * obj.charge())
                 / r.squared()
         }
-        force += object.charge() * units::N / units::C
-            * ((-object.velocity[0] + 15.0) * Vector::basis_const::<1>()
-                + object.velocity[1] * Vector::basis_const::<0>());
+        force += object.charge() * E + object.mass() * g;
+        let vB = if N == 3 {
+            (object.velocity[1] * B[2] - object.velocity[2] * B[1]) * Vector::basis(0)
+                - (object.velocity[0] * B[2] - object.velocity[2] * B[0]) * Vector::basis(1)
+                + (object.velocity[0] * B[1] - object.velocity[1] * B[0]) * Vector::basis(2)
+        } else {
+            panic!("B field in non 3D space");
+        };
+        force += object.charge() * vB * units::N / units::C;
         force
     }
 
@@ -88,25 +119,15 @@ impl<const N: usize> Universe<N> {
                 let u_b = b.velocity();
                 let m_a = a.mass();
                 let m_b = b.mass();
-                // let x_a = a.position();
-                // let x_b = b.position();
 
-                let e = a
-                    .attributes()
-                    .restitution_coefficient
-                    .max(b.attributes().restitution_coefficient);
+                let e = 0.5
+                    * (a.attributes().restitution_coefficient
+                        + b.attributes().restitution_coefficient);
 
                 let n = normal.normalized();
                 let j = -(1.0 + e) * (u_a - u_b).dot(n) / (m_a.recip() + m_b.recip()) * n;
-
-                // let v_a = u_a + j / m_a;
-                // let v_b = u_b - j / m_b;
-                // self.objects[obj_a].set_velocity(v_a);
-                // self.objects[obj_b].set_velocity(v_b);
-                self.objects[obj_a].acc = j / (m_a * STEP);
-                self.objects[obj_b].acc = -j / (m_b * STEP);
-                // self.objects[obj_a].set_position(x_a + normal / 2.0);
-                // self.objects[obj_b].set_position(x_b - normal / 2.0);
+                self.objects[obj_a].acc = 2.0 * j / (m_a * h());
+                self.objects[obj_b].acc = -2.0 * j / (m_b * h());
             }
         }
     }

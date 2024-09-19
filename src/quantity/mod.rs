@@ -64,10 +64,10 @@ macro_rules! c {
         }
     };
     ($(#[$attr:meta])* pub const $N:ident : $T:ty = $e:expr;) => {
-        $crate::c!($(#[$attr])* (pub) const $N : $T = $e;)
+        $crate::c!($(#[$attr])* (pub) const $N : $T = $e;);
     };
     ($(#[$attr:meta])* const $N:ident : $T:ty = $e:expr;) => {
-        $crate::c!($(#[$attr])* () const $N : $T = $e;)
+        $crate::c!($(#[$attr])* () const $N : $T = $e;);
     };
     ($($(#[$attr:meta])* pub const $N:ident : $T:ty = $e:expr;)*) => {
         $($crate::c!($(#[$attr])* (pub) const $N : $T = $e;);)*

@@ -12,3 +12,4 @@ pub use quantity::*;
 pub use universe::Universe;
 
 pub const STEP: Float = 1e-4;
+crate::c! { pub const h: Scalar = STEP * units::s; }

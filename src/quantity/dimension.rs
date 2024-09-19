@@ -96,7 +96,7 @@ impl Dimension {
     };
 
     /// time
-    pub const N: Dimension = Dimension {
+    pub const T: Dimension = Dimension {
         length: 0,
         mass: 0,
         time: 1,
@@ -151,7 +151,7 @@ impl Dimension {
     };
 
     /// amount of substance
-    pub const T: Dimension = Dimension {
+    pub const N: Dimension = Dimension {
         length: 0,
         mass: 0,
         time: 0,
@@ -254,7 +254,7 @@ impl Dimension {
         let mut out = String::new();
 
         let dimensions = [
-            ("N", self.time),
+            ("T", self.time),
             ("L", self.length),
             ("M", self.mass),
             ("I", self.electric_current),
@@ -310,7 +310,7 @@ impl Display for Dimension {
         let mut out = String::new();
 
         let mut dimensions = [
-            ("N", self.time),
+            ("T", self.time),
             ("L", self.length),
             ("M", self.mass),
             ("I", self.electric_current),
