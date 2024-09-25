@@ -169,7 +169,7 @@ impl<const N: usize> Object<N> {
 
     #[inline(always)]
     /// E = KE + rest energy = γmc2
-    pub fn internal_energy(&self) -> Scalar {
+    pub fn energy(&self) -> Scalar {
         self.intrinsic.mass * crate::constants::c2() * self.lorentz_factor()
     }
 

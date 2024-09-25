@@ -14,24 +14,25 @@ fn conf() -> Conf {
 #[macroquad::main(conf)]
 async fn main() {
     let mut universe = Universe::<3>::new();
-    universe.add_magnetic_field([0.0, 0.0, 5e2] * units::T);
+    universe.add_magnetic_field([0.0, 0.0, -1e5] * units::T);
+
     universe.add_object(
-        ObjectBuilder::new_at([610.0, 40.0, 0.0] * units::m)
+        ObjectBuilder::new_at([600.0, 400.0, 0.0] * units::m)
             .with_size(5.0 * units::m)
-            .with_mass(1e0 * units::kg)
-            .with_velocity([20.0, 0.0, 0.0] * units::m / units::s)
-            .with_charge(-1e-3 * units::C)
+            .with_mass(1e1 * units::kg)
+            .with_velocity([0.0, -100.0, 0.0] * units::m / units::s)
+            .with_charge(1e-3 * units::C)
             .with_color(BLUE)
             .build()
             .unwrap(),
     );
 
     universe.add_object(
-        ObjectBuilder::new_at([590.0, 40.0, 0.0] * units::m)
+        ObjectBuilder::new_at([300.0, 420.0, 0.0] * units::m)
             .with_size(5.0 * units::m)
-            .with_mass(1e0 * units::kg)
-            .with_velocity([-20.0, 0.0, 0.0] * units::m / units::s)
-            .with_charge(1e-3 * units::C)
+            .with_mass(1e1 * units::kg)
+            .with_velocity([0.0, 0.0, 0.0] * units::m / units::s)
+            .with_charge(-1e-2 * units::C)
             .with_color(RED)
             .build()
             .unwrap(),
